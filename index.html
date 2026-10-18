@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1424">
+<title>Gully Cricket India</title>
+<meta property="og:title" content="Gully Cricket India 🏏">
+<meta property="og:description" content="Bat, bowl and run in 3D gully cricket. Win coins, unlock players, win tournaments!">
+<style>
+:root{--bg:#0b1424;--card:#13233d;--ink:#f4f7ff;--mut:#9fb2d3;--gold:#ffd24a;--green:#25d366;--red:#ff4d5e;--blue:#4dabff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+button{font-family:inherit}
+#app{max-width:460px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px 4px;gap:8px}
+.brand{font-weight:900;font-size:16px;letter-spacing:.2px;white-space:nowrap}
+.brand b{color:var(--gold)}
+.chips{display:flex;gap:5px;align-items:center}
+.chip{background:var(--card);border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;white-space:nowrap}
+#groundBar{padding:0 14px 5px;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#groundBar b{color:var(--ink)}
+#stage{flex:1;min-height:0;position:relative;margin:0 8px;border-radius:16px;overflow:hidden;background:#10213a}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#sb{position:absolute;top:8px;left:8px;right:8px;background:rgba(8,16,32,.78);color:#fff;border-radius:10px;padding:5px 10px;pointer-events:none;font-size:12px;font-weight:800;line-height:1.35}
+#sb .l1{font-size:13px;display:flex;justify-content:space-between;gap:8px}
+#sb .l1 b{color:var(--gold)}
+#sb .l2{color:#cfe0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+#quitBtn{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(8,16,32,.78);color:#fff;font-size:14px;font-weight:900;cursor:pointer}
+#declBtn{position:absolute;bottom:8px;right:8px;border:0;border-radius:10px;background:rgba(255,210,74,.92);color:#2a1a00;font-size:12px;font-weight:900;padding:7px 10px;cursor:pointer;display:none}
+#hint{position:absolute;bottom:8px;left:44px;right:70px;margin:auto;width:fit-content;max-width:calc(100% - 114px);background:rgba(8,16,32,.78);color:#fff;font-size:12px;font-weight:800;padding:5px 10px;border-radius:8px;pointer-events:none;text-align:center;line-height:1.3}
+#hint small{display:block;color:var(--gold);font-weight:800;font-size:11px}
+#pop{position:absolute;left:0;right:0;top:26%;text-align:center;pointer-events:none;opacity:0;padding:0 8px}
+#pop b{display:block;font-size:54px;font-weight:900;line-height:1;-webkit-text-stroke:7px rgba(0,0,0,.6);paint-order:stroke fill}
+#pop span{display:block;margin-top:6px;font-size:16px;font-weight:800;color:#fff;-webkit-text-stroke:5px rgba(0,0,0,.6);paint-order:stroke fill}
+#pop.show{animation:pop .35s cubic-bezier(.2,1.6,.4,1) forwards}
+#pop.fade{opacity:0!important;transition:opacity .25s;animation:none}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+#msg3d{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-weight:800;color:var(--mut)}
+#hud{display:flex;align-items:center;justify-content:space-between;padding:6px 14px}
+#score{font-size:28px;font-weight:900;color:var(--gold);min-width:100px;line-height:1}
+#score small{font-size:10px;color:var(--mut);display:block;font-weight:800;letter-spacing:1.2px;margin-bottom:2px;white-space:nowrap}
+#balls{display:flex;gap:5px}
+.bl{width:29px;height:29px;border-radius:50%;background:#1c3150;display:grid;place-items:center;font-size:11px;font-weight:900;color:#6b83a8}
+.bl.cur{outline:2px solid var(--gold)}
+.bl.six{background:#7b3fe4;color:#fff}.bl.four{background:#1f9d55;color:#fff}.bl.run{background:#e0a800;color:#222}
+.bl.dot{background:#5b6b85;color:#fff}.bl.out{background:var(--red);color:#fff}.bl.saved{background:var(--blue);color:#fff}
+.bl.wk{background:var(--green);color:#04210f}.bl.conc{background:#d9534f;color:#fff}
+/* action cards */
+#acts{display:grid;gap:8px;margin:0 12px calc(12px + env(safe-area-inset-bottom));grid-template-columns:repeat(3,1fr)}
+#acts.off{opacity:.5;pointer-events:none}
+#acts.runmode{grid-template-columns:1fr;opacity:1;pointer-events:auto}
+.act{background:#16294a;border:2px solid #2b4570;border-radius:14px;padding:8px 10px;text-align:left;color:#fff;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;touch-action:manipulation;min-height:124px}
+.act:active{transform:scale(.97)}
+.act.sel{border-color:var(--gold);background:#24406b;box-shadow:0 0 0 2px rgba(255,210,74,.35)}
+.act .top{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
+.act .pc{font-size:30px;font-weight:900;line-height:1}
+.pc.hi{color:#4cd98a}.pc.mid{color:var(--gold)}.pc.lo{color:#ff7a88}
+.act .tag{font-size:11px;font-weight:900;color:var(--mut)}
+.act .nm{font-size:13px;font-weight:900;margin-top:2px}
+.act .sb{font-size:10.5px;color:var(--mut);font-weight:700;line-height:1.25;margin-top:2px}
+.act .bar{height:5px;background:#0b1424;border-radius:3px;margin-top:6px;overflow:hidden}
+.act .bar i{display:block;height:100%;border-radius:3px}
+.bar i.hi{background:#4cd98a}.bar i.mid{background:var(--gold)}.bar i.lo{background:#ff7a88}
+.runBtn{height:66px;border:0;border-radius:16px;background:linear-gradient(#4cd98a,#1f9d55);color:#04210f;font-size:26px;font-weight:900;letter-spacing:1px;box-shadow:0 5px 0 #146b38;cursor:pointer;touch-action:manipulation}
+.runBtn:active{transform:translateY(3px);box-shadow:0 2px 0 #146b38}
+.runbar{height:9px;background:#0b1424;border-radius:5px;overflow:hidden;margin-top:6px}
+.runbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4cd98a,#ffd24a,#ff4d5e)}
+.runTxt{font-size:12px;font-weight:800;color:var(--mut);text-align:center;margin-top:3px;min-height:15px}
+.stopBtn{border:0;border-radius:10px;background:#1c3150;color:#fff;font-size:12px;font-weight:800;padding:6px;cursor:pointer;margin-top:2px}
+/* overlay panels */
+#ov{position:absolute;inset:0;background:rgba(6,12,24,.9);display:flex;justify-content:center;overflow:auto;padding:14px;z-index:5}
+#ov.hidden{display:none}
+.panel{width:100%;max-width:400px;margin:auto 0;background:var(--card);border-radius:20px;padding:16px;text-align:center}
+.big{font-size:44px;line-height:1.1}
+.mut{color:var(--mut);font-size:12px;font-weight:800;letter-spacing:1px}
+h1{margin:2px 0 4px;font-size:27px;line-height:1.1}
+h1 b{color:var(--gold)}
+h2{margin:4px 0 10px;font-size:22px}
+.rule{background:#0e1b31;border:1px solid #2b4570;border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;color:var(--gold);margin-bottom:12px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:900;cursor:pointer;margin-top:8px;color:#fff;background:#2b4570}
+.btn.gold{background:linear-gradient(#ffd24a,#ff9f1c);color:#2a1a00}
+.btn.wa{background:var(--green);color:#04210f}
+.btn.blue{background:var(--blue);color:#02213b}
+.btn.ghost{background:#1c3150;color:var(--ink);font-size:14px}
+.btn.small{padding:8px;font-size:13px;margin:0 0 6px}
+.btn:disabled{opacity:.45}
+.wallet{display:flex;justify-content:center;gap:8px;margin:6px 0 10px}
+.wallet span{background:#0e1b31;border-radius:999px;padding:5px 12px;font-size:14px;font-weight:900}
+.mbtn{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:16px;padding:12px 14px;margin-top:8px;color:#fff;background:#1c3150;text-align:left;cursor:pointer}
+.mbtn .ic{font-size:28px;width:38px;text-align:center}
+.mbtn b{display:block;font-size:16px}
+.mbtn span.s{display:block;font-size:12px;color:var(--mut);font-weight:700;margin-top:1px}
+.mbtn.main{background:linear-gradient(#ffd24a,#ff9f1c);color:#2a1a00}
+.mbtn.main span.s{color:#5a3b00}
+.me{display:flex;gap:10px;align-items:center;background:#0e1b31;border-radius:14px;padding:10px;margin:6px 0 4px;text-align:left}
+.av{width:54px;height:54px;border-radius:50%;background:#1c3150 center/cover no-repeat;flex:none;display:grid;place-items:center;font-size:26px;border:2px solid #2b4570}
+.me .col{flex:1;min-width:0}
+.me input[type=text],.form input{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #2b4570;background:#0b1424;color:var(--ink);font-size:14px;-webkit-user-select:text;user-select:text}
+.form{background:#0e1b31;border-radius:14px;padding:10px;margin:8px 0}
+.form input{margin-bottom:6px;padding:11px;font-size:15px}
+.row{font-size:22px;letter-spacing:2px;margin:2px 0 4px;word-break:break-all}
+.rl{font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-top:6px}
+.score{font-size:58px;font-weight:900;color:var(--gold);line-height:1.05}
+.score small{font-size:14px;color:var(--mut);margin-left:4px}
+.title{font-size:20px;font-weight:900;margin:2px 0 4px}
+.verd{font-size:15px;font-weight:900;margin-bottom:6px}
+.verd.w{color:#4cd98a}.verd.l{color:#ff7a88}.verd.t{color:var(--gold)}
+.reward{background:#0e1b31;border:1px dashed #4cd98a;border-radius:12px;padding:8px;font-size:15px;font-weight:900;color:#4cd98a;margin:8px 0}
+.note{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.4}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 8px}
+.cb{border:2px solid #2b4570;background:#16294a;color:#fff;border-radius:12px;padding:8px 11px;font-size:13px;font-weight:800;cursor:pointer}
+.cb.on{border-color:var(--gold);background:#24406b;color:var(--gold)}
+.cb.dis{opacity:.4;pointer-events:none}
+.lab{font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;text-align:left;margin-top:8px}
+.tabs{display:flex;gap:6px;margin-top:14px}
+.tabs button{flex:1;border:0;border-radius:10px;padding:8px;background:#1c3150;color:var(--mut);font-weight:800;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--gold);color:#2a1a00}
+#lb{margin-top:8px;text-align:left;font-size:14px}
+.lr{display:flex;gap:8px;padding:7px 4px;border-bottom:1px solid #223a5e;align-items:center}
+.lr .n{flex:1;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lr .g{color:var(--mut);font-size:11px;text-transform:capitalize}
+.lr .s{font-weight:900;color:var(--gold)}
+/* squad */
+.sq{display:flex;align-items:center;gap:8px;background:#16294a;border:2px solid #2b4570;border-radius:12px;padding:7px 9px;margin-top:6px;text-align:left;cursor:pointer}
+.sq.in{border-color:var(--green);background:#173a3a}
+.sq.lock{opacity:.8}
+.sq .no{width:30px;height:30px;border-radius:50%;background:#1c3150;display:grid;place-items:center;font-weight:900;font-size:12px;flex:none}
+.sq .nf{flex:1;min-width:0}
+.sq .nf b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq .nf span{display:block;font-size:11px;color:var(--mut);font-weight:700}
+.sq .st{font-size:12px;font-weight:900;white-space:nowrap}
+.rar-C{color:#cfd8dc}.rar-R{color:#4dabff}.rar-E{color:#c58bff}.rar-L{color:#ffd24a}
+/* quiz */
+.qq{font-size:18px;font-weight:900;margin:10px 0;line-height:1.3}
+.qo{display:block;width:100%;text-align:left;border:2px solid #2b4570;background:#16294a;color:#fff;border-radius:12px;padding:12px;margin-top:8px;font-size:15px;font-weight:800;cursor:pointer}
+.qo.good{border-color:#4cd98a;background:#14452c}
+.qo.bad{border-color:#ff4d5e;background:#4a1620}
+.qx{font-size:13px;color:var(--gold);font-weight:800;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">🏏 Gully Cricket <b>India</b></div>
+    <div class="chips"><span class="chip" id="chCoin">🪙 0</span><span class="chip" id="chGem">💎 0</span></div>
+  </header>
+  <div id="groundBar"></div>
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="sb"></div>
+    <div id="pop"><b id="popL"></b><span id="popS"></span></div>
+    <div id="hint"></div>
+    <button id="quitBtn" title="Menu">✕</button>
+    <button id="declBtn">Declare</button>
+    <div id="msg3d">The 3D engine could not load.<br>Check your internet connection and reload.</div>
+  </div>
+  <div id="hud">
+    <div id="score"><small id="scoreL">YOUR SCORE</small><span id="scoreV">0/0</span></div>
+    <div id="balls"></div>
+  </div>
+  <div id="acts" class="off"></div>
+
+  <div id="ov">
+    <!-- MENU -->
+    <div class="panel" id="vMenu">
+      <div class="big">🏏</div>
+      <h1>Gully Cricket <b>India</b></h1>
+      <div class="wallet"><span>🪙 <b id="mCoin">0</b></span><span>💎 <b id="mGem">0</b></span><span>🔥 <b id="mStreak">0</b></span></div>
+      <button class="mbtn main" data-go="daily"><div class="ic">📅</div><div><b>Daily Challenge</b><span class="s" id="mDailySub"></span></div></button>
+      <button class="mbtn" data-go="quick"><div class="ic">⚡</div><div><b>Quick Play</b><span class="s">IPL · International · Test, 1-10 overs</span></div></button>
+      <button class="mbtn" data-go="friends"><div class="ic">👫</div><div><b>Play with Friends</b><span class="s">Your Player ID · challenge friends online</span></div></button>
+      <button class="mbtn" data-go="tour"><div class="ic">🏆</div><div><b>Tournament</b><span class="s">Easy to Extreme. Win coins and gems!</span></div></button>
+      <button class="mbtn" data-go="squad"><div class="ic">👥</div><div><b>My Squad</b><span class="s" id="mSquadSub"></span></div></button>
+      <button class="mbtn" data-go="quiz"><div class="ic">🧠</div><div><b>Cricket Quiz</b><span class="s">Answer questions, win coins</span></div></button>
+      <div class="me">
+        <div class="av" id="avatar">🙂</div>
+        <div class="col">
+          <button type="button" class="btn ghost small" id="faceBtn">📸 Add your face</button>
+          <input type="file" id="faceIn" accept="image/*" style="display:none">
+          <input type="text" id="myName" maxlength="8" placeholder="Name on your jersey" autocomplete="off">
+          <div class="note" style="margin-top:4px">Your photo stays on this phone. <a href="#" id="faceDel" style="color:var(--blue);display:none">Remove</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK PLAY -->
+    <div class="panel" id="vQuick" style="display:none">
+      <h2>⚡ Quick Play</h2>
+      <div class="lab">MATCH TYPE</div>
+      <div class="chiprow" id="qpFmt"></div>
+      <div class="lab">OVERS</div>
+      <div class="chiprow" id="qpOvers"></div>
+      <div class="lab">DIFFICULTY</div>
+      <div class="chiprow" id="qpDiff"></div>
+      <div class="lab">YOUR TEAM</div>
+      <div class="chiprow" id="qpMy"></div>
+      <div class="lab">OPPONENT</div>
+      <div class="chiprow" id="qpOpp"></div>
+      <div class="lab">GROUND</div>
+      <div class="chiprow" id="qpGround"></div>
+      <div class="note" id="qpInfo"></div>
+      <button class="btn gold" id="qpStart">Start match 🏏</button>
+      <button class="btn ghost" data-go="menu">Back</button>
+    </div>
+
+    <!-- TOURNAMENT -->
+    <div class="panel" id="vTour" style="display:none">
+      <h2>🏆 Tournament</h2>
+      <div id="tourBody"></div>
+      <button class="btn ghost" data-go="menu">Back</button>
+    </div>
+
+    <!-- SQUAD -->
+    <div class="panel" id="vSquad" style="display:none">
+      <h2>👥 My Squad</h2>
+      <div class="note" style="margin-top:0">Tap a player to add or remove him from your XI. Tap a locked player to unlock him.</div>
+      <div class="rule" id="sqCount" style="margin-top:8px"></div>
+      <div id="sqList"></div>
+      <button class="btn ghost" data-go="menu">Back</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="panel" id="vQuiz" style="display:none">
+      <h2>🧠 Cricket Quiz</h2>
+      <div id="quizBody"></div>
+      <button class="btn ghost" data-go="menu" id="quizBack">Back</button>
+    </div>
+
+    <!-- FRIENDS -->
+    <div class="panel" id="vFriends" style="display:none">
+      <h2>👫 Play with Friends</h2>
+      <div id="frBody"></div>
+      <button class="btn ghost" data-go="menu">Back</button>
+    </div>
+
+    <!-- INNINGS BREAK -->
+    <div class="panel" id="vBreak" style="display:none">
+      <div class="mut">INNINGS BREAK</div>
+      <h2>You made</h2>
+      <div class="score" id="bScore" style="font-size:40px"></div>
+      <div class="rule" id="bNeed" style="margin-top:12px"></div>
+      <div class="note" id="bNote" style="margin:0 0 6px">Now you bowl. Each % is the chance your delivery <b>lands</b>. A miss becomes a loose ball. Each over is bowled by a different player from your XI.</div>
+      <button class="btn gold" id="brkBtn">Start bowling 🎳</button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="panel" id="vRes" style="display:none">
+      <div class="mut" id="rHead"></div>
+      <div class="score" id="rScoreWrap"><span id="rScore"></span><small id="rUnit">pts</small></div>
+      <div class="title" id="rTitle"></div>
+      <div class="verd" id="rVerd"></div>
+      <div class="reward" id="rReward" style="display:none"></div>
+      <div class="rl">BATTING <span id="rBT"></span></div>
+      <div class="row" id="rRowB"></div>
+      <div class="rl">BOWLING <span id="rWT"></span></div>
+      <div class="row" id="rRowW"></div>
+      <div class="form" id="rForm">
+        <input id="nm" maxlength="16" placeholder="Apna naam" autocomplete="off">
+        <input id="gp" maxlength="22" placeholder="Mohalla / city / college (optional)" autocomplete="off">
+        <button class="btn blue" id="postBtn" style="margin-top:2px">Post to leaderboard</button>
+      </div>
+      <div id="shareBox">
+        <button class="btn wa" id="waBtn">Share on WhatsApp</button>
+        <button class="btn ghost" id="shBtn">Copy result</button>
+      </div>
+      <button class="btn gold" id="againBtn">Play again</button>
+      <button class="btn ghost" id="menuBtn">Menu</button>
+      <div id="lbBox">
+        <div class="tabs"><button id="tAll" class="on">Everyone</button><button id="tGrp">My mohalla</button></div>
+        <div id="lb"></div>
+      </div>
+      <div class="note" id="cdBox">Next daily ground in <b id="cd"></b></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+
+'use strict';
+/* ================= CONFIG ================= */
+// Leaderboard (optional): paste your Supabase project URL + anon key to switch it on.
+const SUPABASE_URL = 'https://juuttkfgmabvfbxxfrkt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_NCYjsuUe3a1X_bA_Mgjc2A_KiWOd4bH';
+const LAUNCH = Date.UTC(2026, 9, 17);   // Daily Challenge #1
+const RUNUP = 750, RES_MS = 1500, RES_ANIM = 950, SWAT = 0.8, RUN_DUR = 900;
+
+/* ================= CHANCES (edit these numbers to rebalance) ================= */
+const SHOTS = [
+  {id:'six',   name:'Big Hit',      runs:6, tag:'6 runs'},
+  {id:'four',  name:'Drive',        runs:4, tag:'4 runs'},
+  {id:'place', name:'Place & Run',  runs:0, tag:'then RUN!'}
+];
+const BAT_BASE = {
+  good:   {six:43, four:46, place:78},
+  yorker: {six:24, four:33, place:62},
+  bouncer:{six:50, four:41, place:66},
+  full:   {six:68, four:74, place:90}
+};
+const BKEYS = ['yorker','bouncer','good'];
+const BOWL_ACC = {yorker:40, bouncer:53, good:69};      // chance the delivery lands as aimed
+const BOWL_WK  = {yorker:58, bouncer:42, good:26};      // wicket chance if it lands
+const LOOSE_WK = 12;                                    // wicket chance on a missed (loose) ball
+const RUNW = {yorker:[40,35,15,8,2], bouncer:[30,25,10,20,15], good:[35,30,15,15,5], loose:[12,24,26,26,12]};  // dot,1,2,4,6
+const RUNV = [0,1,2,4,6];
+
+const FORMATS = {
+  daily:{name:'Daily Challenge', six:0, four:0, place:0},
+  ipl:  {name:'IPL',             six:6, four:4, place:-2},
+  intl: {name:'International',   six:0, four:0, place:0},
+  test: {name:'Test Match',      six:-8, four:-3, place:6}
+};
+const DIFFS = {
+  easy:   {name:'Easy',    bat:8,   bowl:8,  wk:1.2,  pow:0.8, mix:[0.40,0.55,0.80], coin:1,   tour:{c:200,  g:5}},
+  medium: {name:'Medium',  bat:0,   bowl:0,  wk:1,    pow:1,   mix:[0.40,0.65,0.90], coin:1.5, tour:{c:500,  g:12}},
+  hard:   {name:'Hard',    bat:-6,  bowl:-5, wk:0.85, pow:1.2, mix:[0.38,0.68,0.92], coin:2,   tour:{c:1000, g:25}},
+  extreme:{name:'Extreme', bat:-9,  bowl:-7, wk:0.7,  pow:1.4, mix:[0.36,0.70,0.94], coin:3,   tour:{c:2500, g:60}}
+};
+const DEL = {
+  good:   {name:'Good Length', emoji:'🎯', qb:.55, h0:1.9, hm:.55, D:1050, desc:'balanced'},
+  yorker: {name:'Yorker',      emoji:'⚡', qb:.90, h0:1.9, hm:.10, D:900,  desc:'hard to hit'},
+  bouncer:{name:'Bouncer',     emoji:'🚀', qb:.42, h0:1.9, hm:1.3, D:950,  desc:'risky, big shots possible'},
+  full:   {name:'Full Toss',   emoji:'🎁', qb:1.01,h0:1.9, hm:1.0, D:1250, desc:'free hit!'},
+  loose:  {name:'Loose Ball',  emoji:'💥', qb:.70, h0:1.9, hm:.7,  D:1150, desc:''}
+};
+
+/* ================= GROUNDS ================= */
+const GROUNDS = [
+  {name:'Mumbai Chawl Gali', emoji:'🏘️', quirk:'noSix', rule:'Tiny gali: Big Hit chance −15%. Fours are your friend.',
+   sky:['#ff9a62','#ffd9a0'], grass:'#7d8f5a', pitch:'#cfa96f', deco:'chawl'},
+  {name:'Juhu Beach', emoji:'🏖️', quirk:'easy', rule:'Soft sand pitch: all shot chances +8%.',
+   sky:['#4fb3ff','#cfeeff'], grass:'#e8d39a', pitch:'#c9ab6b', deco:'sea'},
+  {name:'School Ground', emoji:'🏫', quirk:'short', rule:'Short boundary: Drive (4) chance +10%.',
+   sky:['#5aa9ff','#d6efff'], grass:'#4f9a4a', pitch:'#c7a46a', deco:'school'},
+  {name:'Terrace Cricket', emoji:'🌇', quirk:'doubleLast', rule:'Your last batting ball counts DOUBLE.',
+   sky:['#2b1b5a','#ff7aa8'], grass:'#868b93', pitch:'#a3a7af', deco:'skyline'},
+  {name:'Tapri Ground', emoji:'☕', quirk:'life', rule:'Chai break luck: your first wicket (batting) is saved.',
+   sky:['#ffb347','#ffe9b0'], grass:'#8aa05a', pitch:'#c9a36b', deco:'tapri'},
+  {name:'Gaon ka Khet', emoji:'🌾', quirk:'swing', rule:'Swing! Your wicket chances +10% when bowling.',
+   sky:['#7ed6a5','#e8fbd0'], grass:'#5f9e3a', pitch:'#c4a068', deco:'trees'}
+];
+
+const nd = new Date();
+const DAY = Math.floor((Date.UTC(nd.getFullYear(), nd.getMonth(), nd.getDate()) - LAUNCH) / 864e5) + 1;
+const DAYG = (((DAY - 1) % GROUNDS.length) + GROUNDS.length) % GROUNDS.length;
+let gi = DAYG;
+let G = GROUNDS[gi];
+
+/* ================= PLAYERS & ABILITIES ================= */
+// These are original (made-up) players. Change any name here. rar: C common, R rare, E epic, L legend.
+const ABIL = {
+  captain: {n:'Captain',        d:'All shots +5%',                  bat:()=>5},
+  power:   {n:'Slogger',        d:'Big Hit +12%',                   bat:id=>id==='six'?12:0},
+  timer:   {n:'Timer',          d:'Drive +10%',                     bat:id=>id==='four'?10:0},
+  anchor:  {n:'Anchor',         d:'Place & Run +10%',               bat:id=>id==='place'?10:0},
+  finisher:{n:'Finisher',       d:'All shots +8% in the last over', bat:(id,d,c)=>c.lastOver?8:0},
+  hooker:  {n:'Hook Master',    d:'+15% against Bouncers',          bat:(id,d)=>d==='bouncer'?15:0},
+  crusher: {n:'Yorker Crusher', d:'+14% against Yorkers',           bat:(id,d)=>d==='yorker'?14:0},
+  lucky:   {n:'Lucky Charm',    d:'Saved from the first wicket',    bat:()=>0},
+  sprint:  {n:'Quick Runner',   d:'Runs between wickets faster',    bat:()=>0}
+};
+const BABIL = {
+  captain: {n:'Captain',           d:'Delivery lands +6%',          acc:6},
+  swing:   {n:'Swing King',        d:'Wicket chance +8%',           wk:8},
+  accurate:{n:'Pinpoint',          d:'Delivery lands +10%',         acc:10},
+  york:    {n:'Yorker Specialist', d:'Yorker lands +15%',           accK:{yorker:15}},
+  bounce:  {n:'Bouncer Beast',     d:'Bouncer lands +15%',          accK:{bouncer:15}},
+  spin:    {n:'Spin Wizard',       d:'Good Length wicket +12%',     wkK:{good:12}},
+  pace:    {n:'Express Pace',      d:'Yorker & Bouncer wicket +6%', wkK:{yorker:6,bouncer:6}}
+};
+const SKINS = ['#c68642','#a86f3b','#d9a066','#8d5524','#e0ac69'];
+const PL_RAW = [
+  // name, role(BAT/BOWL/ALL), rarity, bat ability, bowl ability
+  ['YOU',            'ALL', 'C', 'captain',  'captain'],
+  ['Aarav Rawat',    'BAT', 'C', 'power',    null],
+  ['Kabir Joshi',    'BAT', 'C', 'timer',    null],
+  ['Vihaan Mehta',   'ALL', 'C', 'anchor',   'accurate'],
+  ['Arjun Patil',    'BAT', 'C', 'hooker',   null],
+  ['Rohan Desai',    'BOWL','C', null,       'swing'],
+  ['Ishaan Nair',    'BOWL','C', null,       'accurate'],
+  ['Dhruv Chauhan',  'ALL', 'C', 'sprint',   'pace'],
+  ['Sahil Khan',     'BAT', 'C', 'crusher',  null],
+  ['Ayaan Gill',     'BOWL','C', null,       'york'],
+  ['Neel Bhatt',     'BAT', 'C', 'finisher', null],
+  ['Yash Thakur',    'BOWL','C', null,       'bounce'],
+  ['Krish Menon',    'ALL', 'C', 'lucky',    'spin'],
+  ['Rudra Singhania','BAT', 'R', 'finisher', null],
+  ['Samar Iyer',     'BOWL','R', null,       'spin'],
+  ['Tanish Kulkarni','ALL', 'R', 'anchor',   'swing'],
+  ['Dev Malhotra',   'BAT', 'R', 'timer',    null],
+  ['Zayd Ansari',    'BOWL','R', null,       'pace'],
+  ['Parth Naidu',    'BAT', 'R', 'hooker',   null],
+  ['Aditya Bose',    'BAT', 'E', 'power',    null],
+  ['Vivaan Shetty',  'BOWL','E', null,       'york'],
+  ['Anay Kapoor',    'ALL', 'E', 'sprint',   'accurate'],
+  ['Kian Dsouza',    'BAT', 'E', 'finisher', null],
+  ['Rehan Qureshi',  'BOWL','E', null,       'swing'],
+  ['Shaurya Pillai', 'BAT', 'E', 'crusher',  null],
+  ['Mahir Sandhu',   'ALL', 'L', 'power',    'pace'],
+  ['Atharv Rao',     'BAT', 'L', 'finisher', null],
+  ['Reyansh Das',    'BOWL','L', null,       'spin'],
+  ['Kavin Raj',      'ALL', 'L', 'timer',    'york'],
+  ['Jivan Tomar',    'BAT', 'L', 'hooker',   null],
+  ['Ojas Khanna',    'BOWL','L', null,       'swing']
+];
+const PRICE = {C:150, R:400, E:900, L:25};          // C/R/E cost coins, L costs gems
+const RARN = {C:'Common', R:'Rare', E:'Epic', L:'Legend'};
+const PLAYERS = PL_RAW.map((p,i)=>({id:i, name:p[0], role:p[1], rar:p[2], bat:p[3], bowl:p[4], skin:SKINS[i%SKINS.length], no:(i===0?7:(i*7%90)+3)}));
+/* ================= TEAMS (licence-ready) =================
+   These are neutral PLACEHOLDER teams (colours only). Real IPL / national / Test team names, logos and
+   player names are licensed (BCCI, IPL franchises, ICC, boards). Once you hold a licence, replace the
+   name / short / shirt / hat values below. Nothing else in the game needs to change. */
+const TEAMS = {
+  ipl:  [['Saffron Kings','SAF','#ff9933','#b35c00'],['Royal Blue XI','RBL','#1c4fd6','#0d2a7a'],['Crimson Riders','CRM','#d62828','#7a1010'],['Emerald Hawks','EMD','#1f9d55','#0f5a30'],
+         ['Violet Storm','VLT','#7b3fe4','#41207d'],['Golden Lions','GLD','#e0b020','#8a6a00'],['Teal Titans','TEL','#14a3a3','#0a5c5c'],['Silver Wolves','SLV','#aab4c4','#586070'],['Red Lions','RLN','#e0242e','#8a1018']],
+  intl: [['Blue Side','BLU','#1c6dd0','#12306b'],['Green Side','GRN','#1f9d55','#0f5a30'],['Yellow Side','YEL','#e0b020','#8a6a00'],['Maroon Side','MRN','#8b1a3a','#4d0d20'],
+         ['Sky Side','SKY','#4dabf7','#1d6aa8'],['Orange Side','ORG','#ff8c1a','#a35200'],['Black Side','BLK','#2b2f3a','#14161c'],['White Side','WHT','#e8ecf4','#9aa3b5'],['Red Lions','RLN','#e0242e','#8a1018']],
+  test: [['Red Ball XI','RED','#d62828','#7a1010'],['Cream XI','CRE','#efe6cc','#a89d78'],['Navy XI','NAV','#1b2f66','#0d1a3d'],['Bottle XI','BOT','#1e5b3a','#0f301e'],
+         ['Maroon XI','MRN','#8b1a3a','#4d0d20'],['Sky XI','SKY','#4dabf7','#1d6aa8'],['Amber XI','AMB','#e08a1a','#8a5200'],['Slate XI','SLT','#6b7688','#3a4252'],['Red Lions','RLN','#e0242e','#8a1018']]
+};
+const teamOf = (fmt, i) => { const L = TEAMS[fmt==='daily' ? 'intl' : fmt] || TEAMS.intl, t = L[((i%L.length)+L.length)%L.length]; return {name:t[0], short:t[1], shirt:t[2], hat:t[3]}; };
+const AI_NAMES = ['Anil','Bunty','Chintu','Dabbu','Eshaan','Farhan','Gopal','Hari','Imran','Jatin','Kunal'];
+const OPP = ['Gully Giants','Tapri Tigers','Chawl Chargers','Beach Blasters','Terrace Titans','Khet Kings','Mohalla Mavericks','Galli Gladiators'];
+
+/* ================= QUIZ (age bands) ================= */
+const QUIZ = {
+  easy: {name:'Age 6-8', coin:5, qs:[
+    ['How many balls are bowled in one over?',['4','6','8','10'],1,'One over has 6 balls.'],
+    ['How many players are in one cricket team?',['9','10','11','12'],2,'Each team plays with 11 players.'],
+    ['What do we call 4 runs when the ball rolls over the boundary?',['A four','A duck','A wide','A catch'],0,'A ball that reaches the boundary along the ground gives 4 runs.'],
+    ['If the batter hits the ball over the boundary without it bouncing, how many runs?',['2','4','6','8'],2,'That is a SIX!'],
+    ['What does the batter use to hit the ball?',['Racket','Bat','Net','Glove'],1,'The batter uses a cricket bat.'],
+    ['How many stumps are at each end of the pitch?',['1','2','3','4'],2,'There are 3 stumps with 2 bails on top.'],
+    ['What colour ball is used in a Test match?',['Red','Blue','Green','Black'],0,'Test matches use a red ball.'],
+    ['Who stands behind the stumps and catches the ball?',['Umpire','Wicket-keeper','Captain','Coach'],1,'The wicket-keeper stands behind the stumps.'],
+    ['What is it called when a batter is out for zero runs?',['A duck','A goose','A hen','A crow'],0,'Out for zero is called a duck.'],
+    ['In which country did cricket begin?',['India','Australia','England','Pakistan'],2,'Cricket began in England.'],
+    ['Which country won the 2011 Men\'s Cricket World Cup?',['Australia','India','England','Sri Lanka'],1,'India won it at home in 2011.'],
+    ['What does IPL stand for?',['Indian Premier League','India Plays Leather','Indian Pitch League','Indoor Premier League'],0,'IPL means Indian Premier League.']
+  ]},
+  mid: {name:'Age 9-12', coin:8, qs:[
+    ['How many overs does each team get in a T20 match?',['10','20','50','100'],1,'T20 means 20 overs for each team.'],
+    ['How many international centuries did Sachin Tendulkar score?',['50','75','100','120'],2,'He scored 100 international hundreds.'],
+    ['What does LBW stand for?',['Leg Before Wicket','Long Ball Wide','Left Batter Wins','Last Ball Won'],0,'LBW is Leg Before Wicket.'],
+    ['What is a maiden over?',['An over with no runs','An over with a six','The first over','An over by a girl'],0,'A maiden over has no runs scored off it.'],
+    ['Who won the 2023 Men\'s ODI World Cup?',['India','Australia','England','New Zealand'],1,'Australia beat India in the final.'],
+    ['How long can a Test match last?',['1 day','3 days','5 days','10 days'],2,'A Test match can last up to 5 days.'],
+    ['What colour ball is used in day-night Test matches?',['Red','Pink','White','Orange'],1,'Day-night Tests use a pink ball.'],
+    ['What is a hat-trick in bowling?',['3 wickets in 3 balls in a row','3 sixes','3 maiden overs','3 catches'],0,'Three wickets with three balls in a row.'],
+    ['Who hit six sixes in one over at the 2007 T20 World Cup?',['Yuvraj Singh','MS Dhoni','Virat Kohli','Rohit Sharma'],0,'Yuvraj Singh hit six sixes off Stuart Broad.'],
+    ['In which city is Eden Gardens?',['Mumbai','Chennai','Kolkata','Delhi'],2,'Eden Gardens is in Kolkata.'],
+    ['How long is a cricket pitch?',['10 yards','22 yards','50 yards','100 yards'],1,'A pitch is 22 yards long.'],
+    ['Which fielder stands next to the wicket-keeper on the off side?',['Slip','Mid-on','Cover','Fine leg'],0,'Slip fielders stand beside the keeper.']
+  ]},
+  hard: {name:'Age 13+', coin:12, qs:[
+    ['Who scored 400 not out in a Test innings?',['Brian Lara','Matthew Hayden','Virender Sehwag','Sachin Tendulkar'],0,'Brian Lara scored 400* against England in 2004.'],
+    ['Which team won the first Cricket World Cup in 1975?',['India','Australia','West Indies','England'],2,'West Indies won in 1975.'],
+    ['What is the Duckworth-Lewis-Stern method used for?',['Setting targets in rain-affected games','Choosing the toss','Measuring ball speed','Ranking players'],0,'It sets fair targets when rain cuts a match.'],
+    ['Who took 800 Test wickets?',['Shane Warne','Muttiah Muralitharan','Anil Kumble','James Anderson'],1,'Muralitharan finished with 800 Test wickets.'],
+    ['Which batter has three ODI double centuries?',['Rohit Sharma','Virat Kohli','Chris Gayle','MS Dhoni'],0,'Rohit Sharma has hit three ODI double hundreds.'],
+    ['What is a googly?',['A leg-spin ball that turns the other way','A fast yorker','A slow bouncer','A no-ball'],0,'A googly looks like leg-spin but turns into the batter.'],
+    ['Which country won the 2024 Men\'s T20 World Cup?',['South Africa','India','England','Australia'],1,'India beat South Africa in the final.'],
+    ['Which captain led India to the 1983 World Cup win?',['Kapil Dev','Sunil Gavaskar','Mohinder Amarnath','Sourav Ganguly'],0,'Kapil Dev lifted the 1983 World Cup.'],
+    ['What is a nightwatchman?',['A lower-order batter sent in late in the day','A security guard','A floodlight','A night bowler'],0,'He protects the better batters near the end of the day.'],
+    ['What is the maximum number of overs one bowler can bowl in a T20 match?',['2','3','4','5'],2,'Each bowler can bowl 4 overs in T20.'],
+    ['Which Indian bowler took all 10 wickets in a Test innings?',['Anil Kumble','Harbhajan Singh','Kapil Dev','R Ashwin'],0,'Anil Kumble took 10 for 74 against Pakistan in 1999.'],
+    ['Which ground is called the Home of Cricket?',['Lord\'s','Eden Gardens','MCG','Wankhede'],0,'Lord\'s in London is known as the Home of Cricket.']
+  ]}
+};
+
+/* ================= COMMENTARY ================= */
+const COMM = {
+  six:['Gayi bahar! Kya shot hai!','Seedha stadium ke bahar!','Massive six! The crowd is on its feet!'],
+  four:['Chauka! Perfectly timed.','Raced to the boundary!','Cracking drive for four!'],
+  bowled:['Clean bowled! Stumps ud gaye!','Timber! What a delivery!'],
+  caught:['Skied it... and taken!','Straight to the fielder. Out!'],
+  runout:['Direct hit! Run out!','Mix-up in the middle. Run out!'],
+  run:['Pushed into the gap and they scamper through.','Good running between the wickets.'],
+  dot:['Dot ball. Pressure building.','Solid defence, no run.'],
+  wk:['Howzat! You got him!','Big wicket for your team!'],
+  conc:['Hit for runs, bowl it fuller!','That one went for runs.']
+};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ================= HELPERS ================= */
+const $ = s => document.querySelector(s);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function titleFor(s){return s>=45?'Gully ka Don':s>=35?'Terrace King':s>=26?'Gali ka Sachin':s>=18?'Mohalla Hero':s>=10?'Gali ka Rookie':'Tailender Bhai';}
+const EMO_BAT = {six:'6️⃣', four:'4️⃣', run:'🟨', dot:'⬜', out:'🟥', saved:'🟦'};
+function emoBowl(r){return r.kind==='out'?'🟩':(r.kind==='six'||r.kind==='four')?'🟥':r.kind==='run'?'🟨':'⬜';}
+function rowOf(list, side){return list.slice(0,12).map(r => side==='bat' ? (EMO_BAT[r.kind]||'⬜') : emoBowl(r)).join('') + (list.length>12 ? '…' : '');}
+const oversOf = b => Math.floor(b/6) + '.' + (b%6);
+
+const cv = $('#c'), ov = $('#ov');
+/* ================= 3D WORLD ================= */
+const HAS3D = typeof THREE !== 'undefined';
+const R = 0.13;                    // ball radius (a bit bigger than real so you can see it)
+const PATH_L = 9, ZS = 0;          // 9 m gully pitch, stumps at z = 0
+const QRING = 0.8;
+const BOWL_Z = ZS - PATH_L;        // release point
+let renderer, scene, camera, ballM, blob, ringM, ringIn, bowlerP, umpireP, batRigs = [], batG, stumpM = [], bailM = [], fielders = [], pts, ptsPos, ptsCol, pv = [];
+const LOOK = HAS3D ? new THREE.Vector3(0.05, 0.45, -5.0) : null;
+const lookNow = HAS3D ? new THREE.Vector3() : null;
+
+function ball3(q, line, path){
+  const z = BOWL_Z + PATH_L*q;
+  let h;
+  if(path.qb >= 1) h = path.h0 + (path.hm - path.h0)*q;
+  else h = q < path.qb ? path.h0*(1 - q/path.qb) : path.hm*Math.sin(Math.PI/2 * (q-path.qb)/(1-path.qb));
+  return new THREE.Vector3(line*q, R + h, z);
+}
+
+function canvasTex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c);}
+function gradTex(a,b){return canvasTex(2,256,(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,w,h);});}
+function stripeTex(col){
+  const c=new THREE.Color(col), c2=c.clone().offsetHSL(0,0,0.035);
+  const t=canvasTex(8,64,(x,w,h)=>{x.fillStyle='#'+c.getHexString();x.fillRect(0,0,w,h/2);x.fillStyle='#'+c2.getHexString();x.fillRect(0,h/2,w,h/2);});
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,40); return t;
+}
+function winTex(wall,glass,rx,ry){
+  const t=canvasTex(64,64,(x,w,h)=>{x.fillStyle=wall;x.fillRect(0,0,w,h);x.fillStyle=glass;x.fillRect(14,12,36,34);
+    x.fillStyle='rgba(0,0,0,.28)';x.fillRect(14,29,36,2);x.fillRect(31,12,2,34);});
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); return t;
+}
+const LM = c => new THREE.MeshLambertMaterial({color:c});
+function bld(w,h,d,wall,glass,y0){
+  const mk=(rx,ry)=>new THREE.MeshLambertMaterial({map:winTex(wall,glass,Math.max(1,Math.round(rx)),Math.max(1,Math.round(ry)))});
+  const sx=mk(d/3,h/3), sz=mk(w/3,h/3), roof=LM(wall);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[sx,sx,roof,roof,sz,sz]);
+  m.position.y=(y0||0)+h/2; return m;
+}
+function put(o,x,y,z){o.position.set(x,y,z);scene.add(o);return o;}
+function tree(x,z,s,col){
+  s=s||1; const g=new THREE.Group();
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(0.18*s,0.26*s,2.4*s,6),LM('#6b4423')); t.position.y=1.2*s; g.add(t);
+  const f=new THREE.Mesh(new THREE.SphereGeometry(1.5*s,8,6),LM(col||'#2f9e44')); f.position.y=3.3*s; f.scale.y=0.9; g.add(f);
+  const f2=new THREE.Mesh(new THREE.SphereGeometry(1.0*s,8,6),LM(col||'#37b24d')); f2.position.set(0.7*s,4.1*s,0.2*s); g.add(f2);
+  return put(g,x,0,z);
+}
+function palm(x,z,s){
+  s=s||1; const g=new THREE.Group();
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(0.14*s,0.22*s,5*s,6),LM('#8a5a2b')); t.position.y=2.5*s; t.rotation.z=0.12; g.add(t);
+  for(let i=0;i<7;i++){
+    const l=new THREE.Mesh(new THREE.BoxGeometry(2.4*s,0.05,0.5*s),LM('#2f9e44'));
+    const p=new THREE.Group(); p.position.set(0.55*s,5.0*s,0); p.rotation.y=i*0.9; p.add(l); l.position.x=1.1*s; l.rotation.z=-0.35; g.add(p);
+  }
+  return put(g,x,0,z);
+}
+/* ================= PLAYERS: jointed human rigs ================= */
+const FACE = {user:null, userTex:null};
+function defFaceCanvas(skin, k){
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = skin; x.fillRect(0,0,128,128);
+  x.fillStyle = 'rgba(0,0,0,.07)'; x.beginPath(); x.ellipse(64,104,50,26,0,0,7); x.fill();
+  x.fillStyle = '#fff'; x.beginPath(); x.ellipse(42,58,11,7.5,0,0,7); x.ellipse(86,58,11,7.5,0,0,7); x.fill();
+  x.fillStyle = '#2a1a10'; x.beginPath(); x.arc(44,59,5,0,7); x.arc(88,59,5,0,7); x.fill();
+  x.strokeStyle = '#1b1209'; x.lineWidth = 5; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(28,44); x.lineTo(56,41); x.moveTo(72,41); x.lineTo(100,44); x.stroke();
+  x.strokeStyle = 'rgba(60,30,10,.45)'; x.lineWidth = 4; x.beginPath(); x.moveTo(64,62); x.lineTo(60,80); x.lineTo(68,80); x.stroke();
+  if(k % 2){ x.fillStyle = '#1b1209'; x.beginPath(); x.ellipse(64,88,22,6,0,0,7); x.fill(); }
+  x.strokeStyle = '#6b2a1a'; x.lineWidth = 5; x.beginPath(); x.arc(64,92,16,0.3,Math.PI-0.3); x.stroke();
+  return c;
+}
+function makeBackTex(name, num){
+  return canvasTex(128,128,(x,w,h)=>{
+    x.clearRect(0,0,w,h); x.textAlign = 'center'; x.lineJoin = 'round';
+    let fs = 28; x.font = '900 '+fs+'px system-ui,sans-serif';
+    while(x.measureText(name).width > 118 && fs > 12){ fs -= 2; x.font = '900 '+fs+'px system-ui,sans-serif'; }
+    x.lineWidth = 5; x.strokeStyle = 'rgba(0,0,0,.55)'; x.fillStyle = '#fff';
+    x.strokeText(name,64,34); x.fillText(name,64,34);
+    x.font = '900 78px system-ui,sans-serif'; x.strokeText(num,64,112); x.fillText(num,64,112);
+  });
+}
+function mkHuman(o){
+  const MS = new THREE.MeshLambertMaterial({color:o.skin}), MSH = new THREE.MeshLambertMaterial({color:o.shirt});
+  const MP = LM(o.pants), MW = LM('#f4f4f4'), MK = LM('#17171b'), MH = LM(o.hair || '#15110d'), MHAT = (o.helmet||o.cap) ? LM(o.helmet||o.cap) : null;
+  const root = new THREE.Group(), hips = new THREE.Group(); hips.position.y = 0.94; root.add(hips);
+  const add = (par,geo,mat,x,y,z,sx,sy,sz) => { const m = new THREE.Mesh(geo,mat); m.position.set(x||0,y||0,z||0); if(sx) m.scale.set(sx,sy,sz); m.castShadow = true; par.add(m); return m; };
+  add(hips, new THREE.CylinderGeometry(0.165,0.16,0.2,14), MP, 0,0,0, 1,1,0.7);
+  const torso = new THREE.Group(); hips.add(torso);
+  add(torso, new THREE.CylinderGeometry(0.205,0.165,0.56,16), MSH, 0,0.29,0, 1,1,0.62);
+  add(torso, new THREE.CylinderGeometry(0.045,0.05,0.1,8), MS, 0,0.6,0);
+  const head = new THREE.Group(); head.position.set(0,0.72,0); torso.add(head);
+  add(head, new THREE.SphereGeometry(0.105,18,14), MS, 0,0.02,0, 1,1.12,1);
+  add(head, new THREE.SphereGeometry(0.03,8,6), MS, -0.105,0.02,0, 0.6,1,1); add(head, new THREE.SphereGeometry(0.03,8,6), MS, 0.105,0.02,0, 0.6,1,1);
+  if(o.helmet){
+    add(head, new THREE.SphereGeometry(0.124,18,10,0,Math.PI*2,0,Math.PI*0.40), MHAT, 0,0.03,0, 1,1.12,1.04);
+    add(head, new THREE.BoxGeometry(0.19,0.018,0.1), MHAT, 0,0.07,0.115);
+    add(head, new THREE.BoxGeometry(0.014,0.07,0.08), MHAT, -0.118,-0.01,0.0); add(head, new THREE.BoxGeometry(0.014,0.07,0.08), MHAT, 0.118,-0.01,0.0);
+  } else if(o.cap){
+    add(head, new THREE.SphereGeometry(0.118,18,10,0,Math.PI*2,0,Math.PI*0.38), MHAT, 0,0.03,0, 1,1.12,1.03);
+    add(head, new THREE.BoxGeometry(0.17,0.014,0.09), MHAT, 0,0.055,0.125);
+  } else {
+    add(head, new THREE.SphereGeometry(0.112,18,10,0,Math.PI*2,0,Math.PI*0.31), MH, 0,0.025,0, 1,1.12,1.02);
+  }
+  const faceMat = new THREE.MeshBasicMaterial({color:0xeeeeee, transparent:true});
+  const defTex = new THREE.CanvasTexture(defFaceCanvas(o.skin, o.k||0)); faceMat.map = defTex;
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.1078,22,14, Math.PI/2-0.8, 1.6, 0.98, 1.3), faceMat);
+  face.position.set(0,0.02,0); face.scale.set(1,1.12,1); head.add(face);
+  const backMat = new THREE.MeshBasicMaterial({transparent:true, depthWrite:false});
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.27), backMat); back.position.set(0,0.34,-0.13); back.rotation.y = Math.PI; torso.add(back);
+  const mkArm = (x) => {
+    const sh = new THREE.Group(); sh.position.set(x,0.5,0); torso.add(sh);
+    add(sh, new THREE.SphereGeometry(0.066,10,8), MSH, 0,0,0);
+    add(sh, new THREE.CylinderGeometry(0.058,0.05,0.3,10), MSH, 0,-0.15,0);
+    const el = new THREE.Group(); el.position.y = -0.3; sh.add(el);
+    add(el, new THREE.SphereGeometry(0.05,8,6), MS, 0,0,0);
+    add(el, new THREE.CylinderGeometry(0.047,0.04,0.27,10), MS, 0,-0.135,0);
+    const hand = add(el, new THREE.SphereGeometry(0.052,10,8), o.gloves ? MW : MS, 0,-0.3,0);
+    return {sh, el, hand};
+  };
+  const armP = mkArm(-0.235), armQ = mkArm(0.235);
+  const mkLeg = (x) => {
+    const th = new THREE.Group(); th.position.set(x,0,0); hips.add(th);
+    add(th, new THREE.CylinderGeometry(0.088,0.066,0.45,12), MP, 0,-0.225,0);
+    const kn = new THREE.Group(); kn.position.y = -0.45; th.add(kn);
+    add(kn, new THREE.CylinderGeometry(0.064,0.05,0.45,12), MP, 0,-0.225,0);
+    add(kn, new THREE.BoxGeometry(0.095,0.07,0.27), MK, 0,-0.455,0.06);
+    if(o.pads){ add(kn, new THREE.BoxGeometry(0.13,0.42,0.1), MW, 0,-0.22,0.05); add(th, new THREE.BoxGeometry(0.15,0.2,0.12), MW, 0,-0.35,0.04); }
+    return {th, kn};
+  };
+  const legA = mkLeg(-0.09), legB = mkLeg(0.09);
+  scene.add(root);
+  return {root, hips, torso, head, armP, armQ, legA, legB, shirtMat:MSH, faceMat, defTex, backMat, hatMat:MHAT, skinMat:MS, skin:o.skin};
+}
+function mkBat(){
+  const g = new THREE.Group();
+  const hd = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.24,8), LM('#1b1b1b')); hd.position.y = -0.1; g.add(hd);
+  const bl = new THREE.Mesh(new THREE.BoxGeometry(0.115,0.6,0.042), LM('#e3b878')); bl.position.y = -0.54; bl.castShadow = true; g.add(bl);
+  const sp = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.1,0.03), LM('#e3b878')); sp.position.y = -0.2; g.add(sp);
+  return g;
+}
+function resetRig(r){
+  r.root.rotation.set(0,0,0); r.root.position.y = 0; r.hips.rotation.set(0,0,0); r.torso.rotation.set(0,0,0); r.head.rotation.set(0,0,0);
+  [r.armP, r.armQ].forEach(a => { a.sh.rotation.set(0,0,0); a.el.rotation.set(0,0,0); });
+  [r.legA, r.legB].forEach(l => { l.th.rotation.set(0,0,0); l.kn.rotation.set(0,0,0); });
+}
+function legs(r,a1,b1,a2,b2){
+  r.legA.th.rotation.x = -a1; r.legA.kn.rotation.x = b1; r.legB.th.rotation.x = -a2; r.legB.kn.rotation.x = b2;
+  const H = (a,b) => 0.45*Math.cos(a) + 0.45*Math.cos(b-a) + 0.04;
+  r.root.position.y = Math.max(H(a1,b1), H(a2,b2)) - 0.94;
+}
+function runLegs(r, ph){
+  const s = Math.sin(ph), c = Math.sin(ph+Math.PI);
+  legs(r, 0.75*s, s<0 ? -1.3*s : 0.12, 0.75*c, c<0 ? -1.3*c : 0.12);
+}
+const _u = HAS3D ? new THREE.Vector3() : null, _p = HAS3D ? new THREE.Vector3() : null, _e = HAS3D ? new THREE.Vector3() : null, _d = HAS3D ? new THREE.Vector3() : null;
+const _q = HAS3D ? new THREE.Quaternion() : null, _down = HAS3D ? new THREE.Vector3(0,-1,0) : null, _T = HAS3D ? new THREE.Vector3() : null, _pole = HAS3D ? new THREE.Vector3() : null;
+function ik(arm, tx,ty,tz, px,py,pz){
+  const S = arm.sh.position, L1 = 0.3, L2 = 0.34;
+  _T.set(tx,ty,tz); _d.copy(_T).sub(S); let d = _d.length(); d = Math.max(0.15, Math.min((L1+L2)*0.995, d)); _u.copy(_d).normalize();
+  const A = Math.acos(Math.max(-1, Math.min(1, (L1*L1 + d*d - L2*L2)/(2*L1*d))));
+  _pole.set(px,py,pz); _p.copy(_pole).addScaledVector(_u, -_pole.dot(_u)).normalize();
+  _e.copy(_u).multiplyScalar(Math.cos(A)*L1).addScaledVector(_p, Math.sin(A)*L1);
+  arm.sh.quaternion.setFromUnitVectors(_down, _d.copy(_e).normalize());
+  _d.copy(_T).sub(S).sub(_e).normalize().applyQuaternion(_q.copy(arm.sh.quaternion).invert());
+  arm.el.quaternion.setFromUnitVectors(_down, _d);
+}
+function celebrate(r, t, jump){
+  r.armP.sh.rotation.set(-2.85,0,-0.35); r.armQ.sh.rotation.set(-2.85,0,0.35); r.armP.el.rotation.set(-0.25,0,0); r.armQ.el.rotation.set(-0.25,0,0);
+  r.torso.rotation.x = -0.1; r.head.rotation.x = -0.25; r.root.position.y = jump ? Math.abs(Math.sin(t/120))*0.16 : 0;
+}
+
+function buildWorld(){
+  if(!renderer){
+    renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+  }
+  scene = new THREE.Scene();
+  scene.background = gradTex(G.sky[0], G.sky[1]);
+  scene.fog = new THREE.Fog(G.sky[1], 28, 120);
+  camera = new THREE.PerspectiveCamera(58, 0.6, 0.1, 300);
+  camera.position.set(-0.55, 1.85, 4.6);
+  lookNow.copy(LOOK);
+
+  scene.add(new THREE.HemisphereLight(G.sky[0], G.grass, 0.95));
+  const sun = new THREE.DirectionalLight(G.deco==='skyline' ? 0xffb4a0 : 0xffffff, G.deco==='skyline' ? 0.55 : 0.8);
+  sun.position.set(-6,12,6); sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
+  const sc = sun.shadow.camera; sc.left=-8; sc.right=8; sc.top=9; sc.bottom=-12; sc.near=1; sc.far=40;
+  sun.target.position.set(0,0,-4); scene.add(sun, sun.target);
+
+  if(G.deco !== 'skyline'){
+    const gm = new THREE.Mesh(new THREE.PlaneGeometry(260,260), new THREE.MeshLambertMaterial({map:stripeTex(G.grass)}));
+    gm.rotation.x = -Math.PI/2; gm.receiveShadow = true; scene.add(gm);
+  } else {
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(12,0.6,36), LM(G.grass)); slab.position.set(0,-0.3,-6); slab.receiveShadow = true; scene.add(slab);
+  }
+  const pitch = new THREE.Mesh(new THREE.BoxGeometry(2.6,0.03,13.5), LM(G.pitch)); pitch.position.set(0,0.015,-4.9); pitch.receiveShadow = true; scene.add(pitch);
+  const line = (z,w)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,0.01,0.06),LM('#ffffff'));m.position.set(0,0.035,z);scene.add(m);};
+  line(-1.25,2.6); line(BOWL_Z+0.4,2.6);
+
+  stumpM = []; bailM = [];
+  const mkStumps = (z,anim)=>{
+    for(let i=-1;i<=1;i++){
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.72,8), LM('#f4e3b2')); m.position.set(i*0.11,0.36,z); m.castShadow = true; scene.add(m);
+      if(anim) stumpM.push(m);
+    }
+    for(let i=0;i<2;i++){
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.025,0.03), LM('#c9a24a')); b.position.set(-0.055+i*0.11,0.735,z); scene.add(b);
+      if(anim) bailM.push(b);
+    }
+  };
+  mkStumps(ZS, true); mkStumps(BOWL_Z-0.5, false);
+
+  const rz = BOWL_Z + PATH_L*QRING;
+  ringM = new THREE.Mesh(new THREE.RingGeometry(0.62,0.78,48), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false}));
+  ringM.rotation.x = -Math.PI/2; ringM.position.set(0,0.045,rz); scene.add(ringM);
+  ringIn = new THREE.Mesh(new THREE.CircleGeometry(0.62,40), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));
+  ringIn.rotation.x = -Math.PI/2; ringIn.position.set(0,0.04,rz); scene.add(ringIn);
+
+  const seam = canvasTex(128,64,(x,w,h)=>{x.fillStyle='#d8f53a';x.fillRect(0,0,w,h);x.strokeStyle='#fff';x.lineWidth=5;
+    x.beginPath();x.arc(w*0.25,h/2,h*0.5,-1.1,1.1);x.stroke();x.beginPath();x.arc(w*0.75,h/2,h*0.5,Math.PI-1.1,Math.PI+1.1);x.stroke();});
+  ballM = new THREE.Mesh(new THREE.SphereGeometry(R,18,14), new THREE.MeshStandardMaterial({map:seam,emissive:0x6a8a00,emissiveIntensity:.45,roughness:.7}));
+  ballM.castShadow = true; ballM.visible = false; scene.add(ballM);
+  blob = new THREE.Mesh(new THREE.CircleGeometry(0.16,16), new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35,depthWrite:false}));
+  blob.rotation.x = -Math.PI/2; blob.visible = false; scene.add(blob);
+
+  bowlerP = mkHuman({shirt:'#d62828',pants:'#f2f2f2',skin:SKINS[0],cap:'#8b1a1a',k:0});
+  umpireP = mkHuman({shirt:'#f0f0f0',pants:'#2a2a30',skin:SKINS[1],cap:'#2a2a30',k:3});
+  batRigs = [0,1].map(i => {
+    const b = mkHuman({shirt:'#1c6dd0',pants:'#f2f2f2',skin:SKINS[(4+i)%5],helmet:'#12306b',pads:true,gloves:true,k:1+i});
+    b.bat = mkBat(); b.torso.add(b.bat);
+    b.bat2 = mkBat(); b.armP.hand.add(b.bat2); b.bat2.rotation.x = 0.25; b.bat2.visible = false;
+    b.endIdx = i; b.ci = i; return b;
+  });
+  const cols=['#ff7f50','#4dabf7','#69db7c','#ffd43b','#e599f7','#ff6b6b'];
+  const spots=[[-4.5,-6.5],[4.8,-7.5],[-6,-1],[6.2,-3],[-3.2,-13],[3.5,-14],[-5.5,2.5],[6,1.5]];
+  fielders = spots.map((p,i)=>{
+    const f = mkHuman({shirt:cols[i%cols.length], pants:i%2?'#2b4570':'#5c4033', skin:SKINS[(i+1)%SKINS.length], hair:'#222', k:i+2});
+    f.base = p; f.face = Math.atan2(-p[0], -5-p[1]); return f;
+  });
+
+  const rnd = mulberry32(DAY*31+7);
+  if(G.deco==='chawl'){
+    const walls=['#b5542f','#d98a4a','#a3433a','#e0b060','#9c4a34','#c96f4a'];
+    for(let i=0;i<8;i++){
+      const z = 8 - i*8;
+      put(bld(6, 9+rnd()*7, 8, walls[(i*2)%6], '#ffe9a8'), -9.2, 0, z);
+      put(bld(6, 9+rnd()*7, 8, walls[(i*2+3)%6], '#ffe9a8'), 9.2, 0, z);
+    }
+    put(bld(26,15,6,'#a3433a','#ffe9a8'), 0, 0, -50);
+    [-5,-15,-26].forEach(z=>{
+      const pts3=[new THREE.Vector3(-6.2,7.2,z),new THREE.Vector3(0,6.4,z),new THREE.Vector3(6.2,7.0,z)];
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.QuadraticBezierCurve3(pts3[0],pts3[1],pts3[2]).getPoints(16)), new THREE.LineBasicMaterial({color:0x3a2a1a})));
+      ['#ff4d6d','#4dabf7','#ffd43b','#69db7c','#e599f7'].forEach((c,k)=>{const cl=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.8,0.04),LM(c));cl.position.set(-4.5+k*2.2,6.2+Math.sin(k)*0.15,z);scene.add(cl);});
+    });
+  } else if(G.deco==='sea'){
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(400,160), new THREE.MeshLambertMaterial({color:'#2a8fd6'})); sea.rotation.x=-Math.PI/2; sea.position.set(0,0.04,-110); scene.add(sea);
+    const sunM = new THREE.Mesh(new THREE.SphereGeometry(6,16,12), new THREE.MeshBasicMaterial({color:0xfff3b0,fog:false})); sunM.position.set(40,26,-150); scene.add(sunM);
+    [[-9,-8],[10,-12],[-12,-22],[13,-26],[-8,-34],[8,-40],[-14,4]].forEach(p=>palm(p[0],p[1],1+rnd()*0.3));
+    [[-6,-20,'#ff4d6d'],[7,-18,'#ffd43b'],[-10,-30,'#4dabf7']].forEach(u=>{
+      const g=new THREE.Group(); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,2.2,6),LM('#ddd')); pole.position.y=1.1; g.add(pole);
+      const cone=new THREE.Mesh(new THREE.ConeGeometry(1.4,0.7,12),LM(u[2])); cone.position.y=2.3; g.add(cone); put(g,u[0],0,u[1]);
+    });
+  } else if(G.deco==='school'){
+    put(bld(36,9,8,'#e9d8a6','#8ecae6'), 0, 0, -42);
+    const door=new THREE.Mesh(new THREE.BoxGeometry(2.4,3,0.2),LM('#6c4a2f')); put(door,0,1.5,-37.9);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,9,6),LM('#777')); put(pole,14,4.5,-30);
+    [['#ff9933',9],['#ffffff',8.6],['#138808',8.2]].forEach(f=>{const fl=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.4,0.03),LM(f[0]));put(fl,14.8,f[1],-30);});
+    for(let i=0;i<10;i++){const s=i%2?1:-1; tree(s*(11+rnd()*6), -4-i*5, 0.9+rnd()*0.5, i%3?'#2b8a3e':'#37b24d');}
+    const scr=new THREE.Mesh(new THREE.BoxGeometry(6,3,0.2),LM('#f1f1f1')); put(scr,0,1.5,-30);
+  } else if(G.deco==='skyline'){
+    const rnd2=mulberry32(DAY*13+5);
+    for(let i=0;i<26;i++){
+      const x=-70+i*5.6+rnd2()*2, h=18+rnd2()*34, w=4+rnd2()*3, z=-30-rnd2()*40;
+      put(bld(w,h,5+rnd2()*3,i%2?'#241a45':'#31235c','#ffd666',-34), x, 0, z);
+    }
+    [-4.8,4.8].forEach(x=>{const w=new THREE.Mesh(new THREE.BoxGeometry(0.3,1.2,34),LM('#9ea3ad'));put(w,x*1.2,0.6,-6);});
+    const fw=new THREE.Mesh(new THREE.BoxGeometry(12.6,1.2,0.3),LM('#9ea3ad')); put(fw,0,0.6,-23);
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,1.8,12),LM('#2b2b3a')); put(tank,-4.8,0.9,-19);
+    const tank2=tank.clone(); put(tank2,4.6,0.9,-14);
+    const moon=new THREE.Mesh(new THREE.SphereGeometry(4,16,12),new THREE.MeshBasicMaterial({color:0xfff0c8,fog:false})); put(moon,-30,32,-120);
+  } else if(G.deco==='tapri'){
+    const hut=new THREE.Group();
+    const body=new THREE.Mesh(new THREE.BoxGeometry(5,2.6,3.6),LM('#8d5a2b')); body.position.y=1.3; hut.add(body);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(4.4,1.8,4),LM('#c0392b')); roof.position.y=3.5; roof.rotation.y=Math.PI/4; roof.scale.z=0.8; hut.add(roof);
+    const ctr=new THREE.Mesh(new THREE.BoxGeometry(4,0.9,0.7),LM('#6b4423')); ctr.position.set(0,0.45,1.9); hut.add(ctr);
+    for(let i=0;i<3;i++){const k=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.3,0.5,10),LM('#c0c0c8'));k.position.set(-1.2+i*1.2,1.15,1.9);hut.add(k);}
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(3,0.9),new THREE.MeshBasicMaterial({map:canvasTex(256,76,(x,w,h)=>{x.fillStyle='#fff3b0';x.fillRect(0,0,w,h);x.fillStyle='#c0392b';x.font='900 52px system-ui,sans-serif';x.textAlign='center';x.fillText('CHAI',w/2,56);})}));
+    sign.position.set(0,2.75,1.85); hut.add(sign);
+    put(hut,-9,0,-12); hut.rotation.y=0.5;
+    const bench=new THREE.Mesh(new THREE.BoxGeometry(2,0.45,0.5),LM('#a0703a')); put(bench,-6.5,0.22,-9);
+    for(let i=0;i<9;i++){const s=i%2?1:-1; tree(s*(10+rnd()*8), -6-i*6, 0.9+rnd()*0.5);}
+    put(bld(14,7,6,'#e0b060','#6c4a2f'),12,0,-34);
+  } else {
+    for(let i=0;i<14;i++){const s=i%2?1:-1; tree(s*(9+rnd()*9), 2-i*5, 0.9+rnd()*0.6, i%3?'#2b8a3e':'#37b24d');}
+    for(let i=0;i<4;i++){const h=new THREE.Mesh(new THREE.ConeGeometry(1.2,1.8,10),LM('#d9b45a')); put(h,(i%2?1:-1)*(6+i),0.9,-8-i*6);}
+    [[-60,-110,40],[20,-120,55],[70,-100,35]].forEach(p=>{const hill=new THREE.Mesh(new THREE.SphereGeometry(p[2],16,10),LM('#6fb36b'));hill.scale.y=0.35;put(hill,p[0],0,p[1]);});
+    for(let i=0;i<14;i++){const f=new THREE.Mesh(new THREE.BoxGeometry(0.12,1.1,0.12),LM('#8a5a2b'));put(f,-8+i*1.2,0.55,-30);}
+  }
+
+  const N = 80; ptsPos = new Float32Array(N*3); ptsCol = new Float32Array(N*3); pv = [];
+  for(let i=0;i<N;i++){ptsPos[i*3+1]=-100; pv.push({v:new THREE.Vector3(),age:1e9,max:1});}
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(ptsPos,3)); pg.setAttribute('color', new THREE.BufferAttribute(ptsCol,3));
+  pts = new THREE.Points(pg, new THREE.PointsMaterial({size:0.2,vertexColors:true,transparent:true,depthWrite:false}));
+  pts.frustumCulled = false; scene.add(pts);
+}
+let pIdx = 0;
+function burst(pos, n, cols){
+  for(let i=0;i<n;i++){
+    const k = pIdx++ % pv.length, c = new THREE.Color(cols[i%cols.length]), p = pv[k];
+    ptsPos[k*3]=pos.x; ptsPos[k*3+1]=pos.y; ptsPos[k*3+2]=pos.z; ptsCol[k*3]=c.r; ptsCol[k*3+1]=c.g; ptsCol[k*3+2]=c.b;
+    p.v.set((Math.random()-.5)*5, 2+Math.random()*4, (Math.random()-.5)*5); p.age = 0; p.max = 0.7+Math.random()*0.6;
+  }
+}
+function resize(){
+  if(!HAS3D || !renderer) return;
+  const st = $('#stage'), cw = st.clientWidth, ch = st.clientHeight;
+  if(!cw || !ch) return;
+  renderer.setSize(cw, ch, false);
+  const asp = cw/ch; camera.aspect = asp;
+  camera.fov = Math.max(52, Math.min(78, 2*Math.atan(Math.tan(31*Math.PI/180)/asp)*180/Math.PI));
+  camera.updateProjectionMatrix();
+}
+
+/* ================= STORAGE / ECONOMY ================= */
+const KEY = 'gci_v1';
+function loadS(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return {};}}
+const S = Object.assign({name:'', grp:'', streak:0, lastDay:0, plays:{}, coins:100, gems:0,
+  unlocked:[0,1,2,3,4,5,6,7,8,9,10,11,12], xi:[0,1,2,3,4,5,6,7,8,9,10], tour:null, band:'easy', qp:null}, loadS());
+function saveS(){try{localStorage.setItem(KEY, JSON.stringify(S));}catch(e){}}
+function curStreak(){return S.lastDay >= DAY - 1 ? (S.streak || 0) : 0;}
+function addCoins(n){ S.coins += n; saveS(); updWallet(); }
+function addGems(n){ S.gems += n; saveS(); updWallet(); }
+function updWallet(){
+  $('#chCoin').textContent = '🪙 ' + S.coins; $('#chGem').textContent = '💎 ' + S.gems;
+  $('#mCoin').textContent = S.coins; $('#mGem').textContent = S.gems; $('#mStreak').textContent = curStreak();
+}
+function pname(pl){ return pl.id===0 ? (S.name || 'You') : pl.name; }
+function first(pl){ return pname(pl).split(' ')[0]; }
+function jerseyName(pl){ return (pl.id===0 ? (S.name || 'YOU') : pl.name.split(' ')[0]).toUpperCase().slice(0,8); }
+function getXI(src){
+  let ids = (src||S.xi).filter(id => S.unlocked.includes(id) && PLAYERS[id]);
+  if(!ids.includes(0)) ids.unshift(0);
+  for(const id of S.unlocked){ if(ids.length >= 11) break; if(!ids.includes(id)) ids.push(id); }
+  ids = ids.slice(0, 11);
+  const ord = {BAT:1, ALL:2, BOWL:3};
+  return ids.map(i => PLAYERS[i]).sort((a,b) => (a.id===0 ? 0 : ord[a.role]) - (b.id===0 ? 0 : ord[b.role]));
+}
+
+/* ================= STATE ================= */
+let cfg = null, mode = 'bat', inn = 1, phase = 'idle', bi = 0, sum = 0, wkts = 0, card = [], nextIn = 2;
+let overRes = [], allRes = [], inn1 = null, target = 0, lineup = [], declared = false;
+let pend = null, res = null, chosen = -1, curRoll = null, curType = null, curBowler = null, comm = '';
+let tPhase = 0, tRelease = 0, tResult = 0, tRes = 0, swingT = -1, shake = 0, DT = 0.016;
+let run = {active:false, done:0, tS:0, dur:RUN_DUR, auto:0, nextAt:0, stopReq:false};
+let tCollect = 0, tDead = 0, fieldP = null, chaser = null, throwEnd = 'A';
+let lifeUsed = false, luckyUsed = {}, practice = false;
+const aiBowler = {id:99, name:'AI Bowler', skin:SKINS[0], no:99, bowl:null, role:'BOWL'};
+
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+function strikerRig(){ return batRigs[0].endIdx === 0 ? batRigs[0] : batRigs[1]; }
+function nonRig(){ return batRigs[0].endIdx === 0 ? batRigs[1] : batRigs[0]; }
+function flipEnds(){ batRigs.forEach(r => r.endIdx = 1 - r.endIdx); }
+function bowlerFor(over){
+  let l = lineup.filter(p => p.role !== 'BAT'); if(!l.length) l = lineup;
+  return l[over % l.length];
+}
+function lastOver(){ return isFinite(cfg.maxBalls) && cfg.maxBalls - bi <= 6; }
+
+/* ================= CHANCES ================= */
+function typeOf(r){ const m = DIFFS[cfg.diff].mix; return r < m[0] ? 'good' : r < m[1] ? 'yorker' : r < m[2] ? 'bouncer' : 'full'; }
+function mkRoll(i){
+  const r = mulberry32(cfg.seed + inn*100003 + i*7919);
+  return {t:r(), hit:r(), how:r(), side:r()<.5?-1:1, line:(r()*2-1)*.09, fld:r(), fld2:r(), acc:r(), wkt:r(), run:r()};
+}
+function batChance(id, d, pl){
+  const F = FORMATS[cfg.fmt]; let v = BAT_BASE[d][id] + F[id] + DIFFS[cfg.diff].bat;
+  const ab = pl && pl.bat ? ABIL[pl.bat] : null;
+  if(ab && ab.bat) v += ab.bat(id, d, {lastOver:lastOver()});
+  if(G.quirk==='noSix' && id==='six') v -= 15;
+  if(G.quirk==='easy') v += 8;
+  if(G.quirk==='short' && id==='four') v += 10;
+  return clamp(Math.round(v), 5, 95);
+}
+function bowlAcc(k, pl){
+  let v = BOWL_ACC[k] + DIFFS[cfg.diff].bowl; const ab = pl && pl.bowl ? BABIL[pl.bowl] : null;
+  if(ab){ v += (ab.acc||0) + ((ab.accK && ab.accK[k]) || 0); }
+  return clamp(Math.round(v), 8, 92);
+}
+function bowlWk(k, pl){
+  let v = BOWL_WK[k] + (G.quirk==='swing' ? 10 : 0); const ab = pl && pl.bowl ? BABIL[pl.bowl] : null;
+  if(ab){ v += (ab.wk||0) + ((ab.wkK && ab.wkK[k]) || 0); }
+  return Math.round(v * DIFFS[cfg.diff].wk * cfg.wkS);
+}
+
+/* ================= BALL OUTCOMES ================= */
+function playBat(si){
+  const sp = strikerRig(), pl = card[sp.ci].pl, R0 = curRoll, d = curType, shot = SHOTS[si], ch = batChance(shot.id, d, pl);
+  const r = {path:DEL[d], line:R0.line, side:R0.side, p:SWAT, chance:ch, runs:0, kind:'dot', fx:'dot', label:'', sub:'', inplay:false, auto:0};
+  if(R0.hit*100 < ch){
+    if(shot.id==='six'){ r.runs = 6; r.kind = 'six'; r.fx = 'six'; r.label = 'SIX!'; r.sub = 'Gayi bahar!'; }
+    else if(shot.id==='four'){ r.runs = 4; r.kind = 'four'; r.fx = 'four'; r.label = 'FOUR!'; r.sub = 'Seedha boundary'; }
+    else { r.kind = 'run'; r.fx = 'field'; r.inplay = true; r.label = 'IN PLAY'; r.sub = 'Now RUN!'; }
+  } else {
+    const bowled = d==='yorker' || (d==='good' && R0.how < .5);
+    if(R0.acc >= cfg.outF){ r.kind = 'dot'; r.fx = 'dot'; r.label = 'MISSED!'; r.sub = 'Beaten, but survived · ' + (100-ch) + '% risk, shot failed'; return r; }
+    r.kind = 'out'; r.fx = bowled ? 'bowled' : 'caught'; r.p = bowled ? 1 : SWAT;
+    r.label = bowled ? 'BOWLED!' : 'CAUGHT!'; r.sub = (bowled ? 'Stumps ud gaye' : 'Skied it!') + ' · ' + (100-ch) + '% risk, shot failed';
+    let why = null;
+    if(pl.bat==='lucky' && !luckyUsed[pl.id]){ luckyUsed[pl.id] = 1; why = 'Lucky Charm saves ' + first(pl) + '!'; }
+    else if(G.quirk==='life' && !lifeUsed){ lifeUsed = true; why = 'Chai break luck: wicket saved'; }
+    if(why){ r.kind = 'saved'; r.fx = 'dot'; r.p = SWAT; r.label = 'LUCKY!'; r.sub = why; }
+  }
+  return r;
+}
+function playBowl(i){
+  const key = BKEYS[i], pl = curBowler, R0 = curRoll, D = DIFFS[cfg.diff];
+  const acc = bowlAcc(key, pl), landed = R0.acc*100 < acc, eff = landed ? key : 'loose';
+  const wkP = landed ? bowlWk(key, pl) : LOOSE_WK * D.wk * cfg.wkS;
+  const r = {path:DEL[eff], line:R0.line*(landed?1:4), side:R0.side, p:SWAT, chance:acc, runs:0, kind:'dot', fx:'dot', label:'', sub:'', inplay:false, auto:0, landed};
+  const why = landed ? DEL[key].name + ' landed!' : 'Missed your ' + DEL[key].name + ' - loose ball';
+  if(R0.wkt*100 < wkP){
+    const bowled = landed && (key==='yorker' || (key==='good' && R0.how < .5));
+    r.kind = 'out'; r.fx = bowled ? 'bowled' : 'caught'; r.p = bowled ? 1 : SWAT; r.label = 'WICKET!'; r.sub = why;
+  } else {
+    const w = RUNW[eff].slice(); w[3] *= D.pow; w[4] *= D.pow;
+    const tot = w.reduce((a,b)=>a+b, 0); let x = R0.run*tot, k = 0;
+    while(k < w.length-1 && x >= w[k]){ x -= w[k]; k++; }
+    const runs = RUNV[k]; r.runs = runs;
+    if(runs===0){ r.kind = 'dot'; r.fx = 'dot'; r.label = 'DOT BALL'; r.sub = why; }
+    else if(runs===6){ r.kind = 'six'; r.fx = 'six'; r.label = 'SIX!'; r.sub = why; }
+    else if(runs===4){ r.kind = 'four'; r.fx = 'four'; r.label = 'FOUR!'; r.sub = why; }
+    else { r.kind = 'run'; r.fx = 'field'; r.inplay = true; r.auto = runs; r.label = runs + (runs>1 ? ' RUNS' : ' RUN'); r.sub = why; }
+  }
+  return r;
+}
+
+/* ================= RUNNING BETWEEN THE WICKETS ================= */
+function runAdj(){ if(mode!=='bat') return 0; const pl = card[strikerRig().ci].pl; return pl.bat==='sprint' ? -220 : 0; }
+function enterRun(t){
+  phase = 'run'; res = pend; pend.field = true; tResult = t;
+  fieldP = new THREE.Vector3(pend.side*(3 + curRoll.fld*9), R, -(1.5 + curRoll.fld2*8));
+  let best = null, bd = 1e9;
+  fielders.forEach(f => { const d = Math.hypot(f.base[0]-fieldP.x, f.base[1]-fieldP.z); if(d < bd){ bd = d; best = f; } });
+  chaser = best;
+  const dA = Math.hypot(fieldP.x, fieldP.z), dB = Math.hypot(fieldP.x, fieldP.z + 9.5);
+  throwEnd = dA < dB ? 'A' : 'B';
+  const thr = Math.min(dA, dB)/16*1000 + 150;
+  tCollect = t + 120 + bd/5.2*1000 + 500; tDead = tCollect + thr;
+  tDead = Math.max(tDead, t + 1750); tCollect = Math.min(tCollect, tDead - 300);
+  run = {active:false, done:0, tS:0, dur:RUN_DUR + runAdj(), auto:pend.auto||0, nextAt:t + 350, stopReq:false};
+  if(run.auto){ tDead = t + 350 + run.auto*RUN_DUR + 250; tCollect = Math.max(t + 700, tDead - thr); }
+  renderActs(); setHint(); sb();
+}
+function startRun(t){
+  if(phase !== 'run' || run.active || run.done >= 3 || run.auto) return;
+  run.active = true; run.tS = t;
+}
+function runTick(t){
+  if(run.active && t >= run.tS + run.dur){ run.done++; run.active = false; flipEnds(); }
+  if(run.auto){
+    if(!run.active && run.done < run.auto && t >= run.nextAt) { run.active = true; run.tS = t; }
+    if(run.done >= run.auto && !run.active && t >= tDead - 150) finalizeRun(t);
+  } else {
+    if((run.done >= 3 && !run.active) || t >= tDead || (run.stopReq && !run.active)) finalizeRun(t);
+    const f = $('#runFill'), x = $('#runTxt');
+    const rb = $('#runBtn'); if(rb){ rb.textContent = run.active ? 'RUNNING… 🏃' : (run.done ? 'RUN AGAIN! ('+run.done+' done)' : 'RUN! 🏃'); rb.disabled = run.done >= 3; }
+    if(f){ f.style.width = clamp((t - tResult)/(tDead - tResult), 0, 1)*100 + '%'; }
+    if(x){ x.textContent = t < tCollect ? 'Fielder is chasing the ball… (' + run.done + ' run' + (run.done===1?'':'s') + ')' : '⚠ THROW IS COMING! Finish your run!'; }
+  }
+}
+function finalizeRun(t){
+  const r = pend, out = run.active && !run.auto;
+  if(out){ r.kind = 'out'; r.fx = 'runout'; r.runs = 0; r.label = 'RUN OUT!'; r.sub = 'Caught short of the crease'; }
+  else if(run.done > 0){ r.kind = 'run'; r.runs = run.done; r.label = run.done + (run.done>1 ? ' RUNS' : ' RUN'); r.sub = mode==='bat' ? 'Good running between the wickets!' : r.sub; }
+  else { r.kind = 'dot'; r.runs = 0; r.label = 'NO RUN'; r.sub = 'Placed it, but stayed put'; }
+  run.active = false;
+  applyResult(t);
+}
+
+/* ================= MATCH FLOW ================= */
+function startMatch(c){
+  cfg = Object.assign({kind:'quick', fmt:'intl', overs:2, diff:'medium', gi:DAYG, seed:(Math.random()*1e9)|0}, c);
+  cfg.maxBalls = cfg.fmt==='test' ? Infinity : cfg.overs*6;
+  const ti = (c.myIdx|0), oi = c.oppIdx==null ? ti + 1 + Math.floor(Math.random()*3) : c.oppIdx;
+  cfg.my = teamOf(cfg.fmt, ti); cfg.op = teamOf(cfg.fmt, oi===ti ? oi+1 : oi);
+  if(cfg.kind==='daily' || cfg.kind==='friend' || cfg.kind==='live'){ cfg.my = null; cfg.op = null; if(!cfg.opp) cfg.opp = 'AI'; } else cfg.opp = cfg.op.name;
+  cfg.wk = cfg.kind==='daily' ? 3 : 10;
+  cfg.outF = cfg.kind==='daily' ? 1 : cfg.fmt==='test' ? 0.35 : 0.5;   // chance a failed shot costs a wicket
+  cfg.wkS = cfg.kind==='daily' ? 1 : 0.5;                              // AI batter wicket-chance scale
+  practice = !!cfg.practice;
+  if(cfg.gi !== gi){ gi = cfg.gi; G = GROUNDS[gi]; rebuildWorld(); }
+  setGroundBar();
+  lineup = getXI((cfg.kind==='daily' || cfg.kind==='friend' || cfg.kind==='live') ? DEFAULT_XI : null); inn = 1; mode = (cfg.live && !cfg.live.isHost) ? 'bowl' : 'bat'; inn1 = null; target = 0; lifeUsed = false; luckyUsed = {};
+  ov.classList.add('hidden');
+  if(cfg.live) liveInit();
+  startInnings();
+  setTimeout(beginChoose, 650);
+}
+function startInnings(){
+  bi = 0; sum = 0; wkts = 0; overRes = []; allRes = []; pend = null; res = null; chosen = -1; swingT = -1; declared = false; nextIn = 2; comm = '';
+  if(mode==='bat') card = lineup.map(p => ({pl:p, runs:0, balls:0, out:false}));
+  else if(cfg.live) card = oppLineup.map(p => ({pl:p, runs:0, balls:0, out:false}));
+  else card = AI_NAMES.map((n,i) => ({pl:{id:100+i, name:n, no:i+11, skin:SKINS[(i+2)%5], bat:null, role:'BAT'}, runs:0, balls:0, out:false}));
+  batRigs[0].ci = 0; batRigs[0].endIdx = 0; batRigs[1].ci = 1; batRigs[1].endIdx = 1;
+  curBowler = cfg.live ? liveBowler(0) : (mode==='bowl' ? bowlerFor(0) : aiBowler);
+  phase = 'idle'; applyRoles(); updHud(); renderActs(); sb(); setHint(); updDecl();
+}
+function beginChoose(){
+  if(!cfg) return;
+  phase = 'choose'; swingT = -1; res = null; pend = null; chosen = -1;
+  curRoll = mkRoll(bi);
+  curType = (mode==='bat' && !cfg.live) ? typeOf(curRoll.t) : null;
+  if(cfg.live) curBowler = liveBowler(Math.floor(bi/6)); else if(mode==='bowl') curBowler = bowlerFor(Math.floor(bi/6));
+  if(cfg.live && mode==='bat'){ phase = 'wait'; waitT = performance.now(); curKey = null; }
+  const pl = $('#pop'); pl.classList.remove('show','fade'); pl.style.opacity = 0;
+  applyRoles(); renderActs(); updHud(); sb(); setHint(); updDecl();
+}
+function onAct(i){
+  if(phase !== 'choose') return;
+  if(cfg.live) return liveAct(i);
+  chosen = i; pend = mode==='bat' ? playBat(i) : playBowl(i);
+  phase = 'runup'; tPhase = performance.now(); swingT = -1;
+  renderActs(); updHud(); setHint(); updDecl();
+}
+function contact(t){
+  tResult = t; pend.pos0 = ball3(pend.p, pend.line, pend.path);
+  if(pend.inplay) enterRun(t); else applyResult(t);
+}
+const KCOL_BAT  = {six:'#b388ff', four:'#69f0ae', run:'#ffd54f', dot:'#cfd8dc', out:'#ff6b7a', saved:'#4dabff'};
+const KCOL_BOWL = {six:'#ff6b7a', four:'#ff8a65', run:'#ffd54f', dot:'#cfd8dc', out:'#69f0ae', saved:'#4dabff'};
+function applyResult(t){
+  const r = pend; res = r; phase = 'result'; tRes = t;
+  if(!r.pos0) r.pos0 = ball3(r.p, r.line, r.path);
+  if(mode==='bat' && G.quirk==='doubleLast' && isFinite(cfg.maxBalls) && bi === cfg.maxBalls-1 && r.runs > 0 && !r.dbl){ r.runs *= 2; r.sub += ' · x2'; r.dbl = true; }
+  const bc = card[strikerRig().ci];
+  sum += r.runs; bc.balls++; if(r.runs > 0) bc.runs += r.runs; if(r.kind==='out'){ wkts++; bc.out = true; }
+  const it = {kind:r.kind, runs:r.runs}; overRes.push(it); allRes.push(it);
+  if(mode==='bat'){
+    if(r.kind==='six') burst(r.pos0, 30, ['#b388ff','#ffd24a','#ffffff']);
+    else if(r.kind==='four') burst(r.pos0, 16, ['#69f0ae','#ffffff']);
+    else if(r.kind==='out'){ burst(r.pos0, 12, ['#ff6b7a','#ffffff']); shake = 0.12; }
+  } else {
+    if(r.kind==='out'){ burst(r.pos0, 26, ['#69f0ae','#ffd24a','#ffffff']); shake = 0.08; }
+    else if(r.kind==='six' || r.kind==='four') burst(r.pos0, 12, ['#ff6b7a','#ffffff']);
+  }
+  const col = (mode==='bat' ? KCOL_BAT : KCOL_BOWL)[r.kind];
+  const pl = $('#pop'); $('#popL').textContent = r.label; $('#popL').style.color = col;
+  $('#popL').style.fontSize = r.label.length > 9 ? '34px' : '54px'; $('#popS').textContent = r.sub;
+  pl.classList.remove('show','fade'); void pl.offsetWidth; pl.classList.add('show');
+  const ck = r.kind==='out' ? (mode==='bowl' ? 'wk' : r.fx==='runout' ? 'runout' : r.fx) : r.kind==='saved' ? 'dot' : (mode==='bowl' && (r.kind==='six'||r.kind==='four')) ? 'conc' : r.kind;
+  comm = pick(COMM[ck] || COMM.dot);
+  try{ if(navigator.vibrate) navigator.vibrate(r.kind==='out' ? [30,30,30] : 20); }catch(e){}
+  updHud(); setHint(); sb(); renderActs(); updDecl();
+}
+function advance(){
+  const r = res;
+  if(r.kind==='out'){
+    const sp = strikerRig(), np = nonRig();
+    if(nextIn < card.length && wkts < cfg.wk) sp.ci = nextIn++;
+    sp.endIdx = 0; np.endIdx = 1;
+  }
+  bi++;
+  const chased = inn===2 && sum > target;
+  if((isFinite(cfg.maxBalls) && bi >= cfg.maxBalls) || wkts >= cfg.wk || chased || declared) return endInnings();
+  if(bi % 6 === 0){ overRes = []; flipEnds(); }
+  beginChoose();
+}
+function endInnings(){
+  $('#hint').style.display = 'none';
+  if(inn === 1){
+    inn1 = {runs:sum, wkts, balls:bi, allRes:allRes.slice(), card:card.map(c => ({id:c.pl.id, runs:c.runs, balls:c.balls, out:c.out}))};
+    target = inn1.runs; phase = 'break';
+    $('#bScore').textContent = inn1.runs + '/' + inn1.wkts + ' (' + oversOf(inn1.balls) + ' ov)';
+    $('#bNeed').textContent = 'AI needs ' + (target+1) + ' to win';
+    showView('Break'); ov.classList.remove('hidden'); renderActs(); sb();
+    if(cfg.live) liveBreak(); else resetBreak();
+  } else finishMatch();
+}
+function startInn2(){
+  inn = 2; mode = cfg.live ? (mode==='bat' ? 'bowl' : 'bat') : 'bowl'; ov.classList.add('hidden'); startInnings(); setTimeout(beginChoose, 400);
+}
+function declare(){
+  if(phase !== 'choose' || mode !== 'bat' || cfg.fmt !== 'test') return;
+  declared = true; endInnings();
+}
+
+/* ================= REWARDS + FINISH ================= */
+function matchCoins(won){
+  if(!won || cfg.kind==='friend') return 0;
+  const D = DIFFS[cfg.diff];
+  if(cfg.kind==='daily') return (S.plays[DAY] && S.plays[DAY].outcome==='won') ? 0 : 50;
+  if(cfg.kind==='tour') return Math.round(40*(cfg.round+1)*D.coin);
+  const base = cfg.fmt==='test' ? 150 : 10 + cfg.overs*9;
+  return Math.round(base*(cfg.fmt==='ipl' ? 1.1 : 1)*D.coin);
+}
+function finishMatch(){
+  phase = 'done'; $('#sb').style.display = 'none';
+  const you = inn1, ai = {runs:sum, wkts, balls:bi, allRes:allRes.slice()};
+  let mine = you, theirs = ai; if(cfg.live && !cfg.live.isHost){ mine = ai; theirs = you; }
+  const outcome = theirs.runs > mine.runs ? 'lost' : theirs.runs < mine.runs ? 'won' : 'tied';
+  const won = outcome === 'won', rec = {outcome, bat:mine, bowl:theirs, coins:0, gems:0, kind:cfg.kind};
+  let coins = practice ? 0 : matchCoins(won), gems = 0;
+  if(!practice && won && cfg.kind==='quick' && (cfg.diff==='hard' || cfg.diff==='extreme')) gems = cfg.diff==='hard' ? 1 : 2;
+  if(cfg.kind==='daily'){
+    rec.score = Math.min(100, you.runs + 5*ai.wkts + (won ? 10 : 0));
+    if(!practice){
+      if(S.lastDay === DAY-1) S.streak = (S.streak||0) + 1; else if(S.lastDay !== DAY) S.streak = 1;
+      S.lastDay = DAY;
+      const old = S.plays[DAY]; if(!old || rec.score > old.score){ S.plays[DAY] = {score:rec.score, outcome, bat:{runs:you.runs, wkts:you.wkts, allRes:you.allRes}, bowl:{runs:ai.runs, wkts:ai.wkts, allRes:ai.allRes}, posted:false}; }
+    }
+  }
+  if(cfg.kind==='live'){ coins = won ? 80 : outcome==='tied' ? 40 : 25; liveStop(); }
+  if(cfg.kind==='friend'){ rec.score = Math.min(300, you.runs + 5*ai.wkts + (won ? 10 : 0)); }
+  if(cfg.kind==='tour' && S.tour){
+    if(won){
+      S.tour.round++;
+      if(S.tour.round >= TOUR_ROUNDS.length){ const T = DIFFS[S.tour.diff].tour; coins += T.c; gems += T.g; rec.tourDone = true; S.tour = null; }
+    } else { rec.tourOut = true; S.tour = null; }
+  }
+  rec.coins = coins; rec.gems = gems;
+  if(coins) S.coins += coins; if(gems) S.gems += gems; saveS(); updWallet();
+  curRec = rec;
+  setTimeout(() => showResult(rec), 800);
+}
+
+/* ================= LOOK (jersey, face) ================= */
+const faceCache = {};
+function defFaceTex(pl){ const k = pl.skin + pl.no; if(!faceCache[k]) faceCache[k] = new THREE.CanvasTexture(defFaceCanvas(pl.skin, pl.no)); return faceCache[k]; }
+function faceTexUser(){ if(FACE.user && !FACE.userTex){ FACE.userTex = new THREE.CanvasTexture(FACE.user); } return FACE.userTex; }
+function rigLook(rg, pl, team){
+  const tm = cfg && cfg.my ? (team==='you' ? cfg.my : cfg.op) : null;
+  rg.shirtMat.color.set(tm ? tm.shirt : team==='you' ? '#1c6dd0' : '#d62828');
+  if(rg.hatMat) rg.hatMat.color.set(tm ? tm.hat : team==='you' ? '#12306b' : '#8b1a1a');
+  rg.skinMat.color.set(pl.skin || SKINS[0]);
+  rg.faceMat.map = (pl.id===0 && faceTexUser()) || defFaceTex(pl); rg.faceMat.needsUpdate = true;
+  rg.backMat.map = makeBackTex(jerseyName(pl), String(pl.no)); rg.backMat.needsUpdate = true;
+}
+function applyRoles(){
+  if(!HAS3D || !bowlerP || !card.length) return;
+  const bt = mode==='bat' ? 'you' : 'ai', wt = mode==='bat' ? 'ai' : 'you';
+  batRigs.forEach(rg => { const c = card[rg.ci]; if(c) rigLook(rg, c.pl, bt); });
+  rigLook(bowlerP, curBowler || aiBowler, wt);
+}
+function rebuildWorld(){
+  buildWorld(); camNow.set(-0.55, 1.85, 4.6); resize(); applyRoles();
+}
+
+/* ================= SCENE UPDATE ================= */
+const _cp = HAS3D ? new THREE.Vector3() : null, _lt = HAS3D ? new THREE.Vector3() : null, _f = HAS3D ? new THREE.Vector3() : null;
+const camNow = HAS3D ? new THREE.Vector3(-0.55, 1.85, 4.6) : null;
+let camOverride = null;
+window.__gcd = {setCam:(o)=>{camOverride=o;}};
+const V = HAS3D ? new THREE.Vector3() : null;
+const ease2 = x => 1-Math.pow(1-x,2);
+const END = [[0.62,-0.95],[-1.0,-8.6]];
+
+function fieldBall(t, out){
+  const T = (throwEnd==='A') ? [0,0.9,0.1] : [0,0.9,-9.5];
+  if(t < tResult + 520){
+    const u = clamp((t - tResult)/520, 0, 1), e = ease2(u), p = res.pos0;
+    out.set(p.x + (fieldP.x-p.x)*e, R + Math.abs(Math.sin(u*7))*0.3*(1-u), p.z + (fieldP.z-p.z)*e);
+  } else if(t < tCollect){ out.set(fieldP.x, R, fieldP.z); }
+  else if(t < tDead){
+    const u = clamp((t - tCollect)/(tDead - tCollect), 0, 1);
+    out.set(fieldP.x + (T[0]-fieldP.x)*u, 1.0 + (T[1]-1.0)*u + Math.sin(Math.PI*u)*1.2, fieldP.z + (T[2]-fieldP.z)*u);
+  } else { out.set(T[0] + (throwEnd==='A' ? 0.2 : 0.3), R, T[2] + (throwEnd==='A' ? 0.5 : -0.2)); }
+  return out;
+}
+function resBallPos(t){
+  if(res.fx==='field' || res.fx==='runout') return fieldBall(t, V2);
+  const u = Math.min(1,(t-tResult)/RES_ANIM), e = 1-Math.pow(1-u,2), p = res.pos0, side = res.side;
+  let T, arc = 0, roll = false;
+  switch(res.fx){
+    case 'six':    T = new THREE.Vector3(p.x+side*5, 20, -48); arc = 9; break;
+    case 'four':   T = new THREE.Vector3(side*17, R, -9); roll = true; break;
+    case 'caught': T = new THREE.Vector3(p.x+side*3, 1.4, -6); arc = 4; break;
+    case 'bowled': T = new THREE.Vector3(p.x+0.4*side, R, 4); arc = 0.5; break;
+    default:       T = new THREE.Vector3(p.x+side*0.5, R, -0.9); arc = 0.4;
+  }
+  const o = p.clone().lerp(T, e); o.y += arc*4*u*(1-u);
+  if(roll) o.y = R + Math.abs(Math.sin(u*13))*0.45*(1-u);
+  return o;
+}
+const V2 = HAS3D ? new THREE.Vector3() : null;
+
+function poseBatter(bt, t, mood){
+  legs(bt, 0.2, 0.6, -0.14, 0.55);
+  bt.torso.rotation.x = 0.3; bt.head.rotation.x = -0.28; bt.head.rotation.y = -0.2;
+  let th = -0.5 + Math.sin(t/430)*0.05, gx = 0, gy = 0.17, gz = 0.34, twist = 0;
+  if(mood === 'happy'){
+    bt.torso.rotation.x = -0.08; bt.head.rotation.x = -0.2; th = 2.9; gy = 0.9; gz = 0.12; legs(bt, 0.06, 0.1, -0.06, 0.1);
+  } else if(mood === 'sad'){
+    bt.torso.rotation.x = 0.45; bt.head.rotation.x = 0.45; th = -0.1; gy = 0.0; gz = 0.2; legs(bt, 0.08, 0.15, -0.05, 0.12);
+  } else if(swingT >= 0){
+    const el = t - swingT, u = Math.min(1, el/330);
+    if(u < 0.35){ const k = ease2(u/0.35); th = -0.5 + 3.0*k; gz = 0.34 - 0.16*k; gy = 0.17 + 0.3*k; twist = -0.5*k; }
+    else { const k = ease2((u-0.35)/0.65); th = 2.5 - 3.9*k; gz = 0.18 + 0.28*k; gy = 0.47 - 0.3*k; twist = -0.5 + 1.25*k; }
+  }
+  bt.torso.rotation.y = twist;
+  bt.bat.position.set(gx,gy,gz); bt.bat.rotation.set(th,0,0);
+  const ax = -Math.cos(th), az = -Math.sin(th);
+  ik(bt.armQ, gx, gy, gz, 0.6,-1,-0.3);
+  ik(bt.armP, gx, gy + 0.15*ax, gz + 0.15*az, -0.6,-1,-0.3);
+}
+function poseWaiter(rg, t){
+  legs(rg, 0.06, 0.12, -0.05, 0.1); rg.torso.rotation.x = 0.12; rg.head.rotation.y = Math.sin(t/1100)*0.2;
+  rg.armP.sh.rotation.set(-0.1,0,0.1); rg.armP.el.rotation.set(-0.35,0,0); rg.armQ.sh.rotation.set(-0.15,0,-0.1); rg.armQ.el.rotation.set(-0.5,0,0);
+}
+function poseRunner(rg, s){
+  const ph = s*Math.PI*7; runLegs(rg, ph); rg.torso.rotation.x = 0.32;
+  rg.armP.sh.rotation.set(-0.8 + 0.35*Math.sin(ph),0,0); rg.armP.el.rotation.set(-1.0,0,0);
+  rg.armQ.sh.rotation.set(0.9*Math.sin(ph + Math.PI),0,0); rg.armQ.el.rotation.set(-0.9,0,0);
+}
+function updateScene(t){
+  ringM.material.opacity = 0.6 + 0.25*Math.sin(t/220);
+  const bw = bowlerP;
+  const evKind = (phase==='result' && res) ? res.kind : null;
+  const cheer = evKind && (evKind==='six' || evKind==='four' || evKind==='out');
+  const age = (phase==='result' && res) ? t - tRes : -1;
+
+  // ---- bowler ----
+  resetRig(bw); bw.root.rotation.y = 0;
+  let bz = BOWL_Z - 3.8, lean = 0.08;
+  if(phase==='runup'){
+    const u = Math.min(1,(t-tPhase)/RUNUP), ph = u*20; bz = BOWL_Z - 0.1 - 3.6*(1-u);
+    runLegs(bw, ph); lean = 0.12 + 0.25*u;
+    if(u < 0.55){ bw.armP.sh.rotation.set(0.5*Math.sin(ph),0,0); bw.armQ.sh.rotation.set(-0.5*Math.sin(ph),0,0); bw.armP.el.rotation.set(-0.6,0,0); }
+    else { const k = ease2((u-0.55)/0.45); bw.armP.sh.rotation.set(3.5*k,0,0); bw.armQ.sh.rotation.set(-1.5*k,0,-0.2*k); }
+  } else if(phase==='flight' || phase==='result' || phase==='between' || phase==='run'){
+    const el = Math.max(0, t - tRelease), k = Math.min(1, el/520);
+    bz = BOWL_Z - 0.1 + 0.55*ease2(k);
+    bw.armP.sh.rotation.set(3.5 + (Math.PI*2-3.5)*ease2(k),0,0); bw.armQ.sh.rotation.set(-1.5*(1-k),0,0);
+    legs(bw, 0.55, 0.15, -0.35, 0.9); lean = 0.45 - 0.3*k;
+  } else {
+    legs(bw, 0.04, 0.08, -0.04, 0.08); bw.armP.sh.rotation.set(0.12,0,0.08); bw.armQ.sh.rotation.set(-0.12,0,-0.08); bw.armP.el.rotation.set(-0.5,0,0);
+    bw.head.rotation.y = Math.sin(t/900)*0.15;
+  }
+  bw.torso.rotation.x = lean;
+  if(mode==='bowl' && evKind==='out' && age > 150) celebrate(bw, t, true);
+  else if(mode==='bowl' && (evKind==='six' || evKind==='four') && age > 150){ bw.torso.rotation.x = 0.5; bw.head.rotation.x = 0.5; bw.armP.sh.rotation.set(0.1,0,0.3); bw.armQ.sh.rotation.set(0.1,0,-0.3); }
+  bw.root.position.set(0.235, bw.root.position.y, bz);
+  bw.root.updateMatrixWorld(true);
+
+  // ---- umpire ----
+  resetRig(umpireP); legs(umpireP, 0.03, 0.05, -0.03, 0.05);
+  umpireP.armP.sh.rotation.set(-0.1,0,0.1); umpireP.armQ.sh.rotation.set(-0.1,0,-0.1); umpireP.armP.el.rotation.set(-0.5,0,0); umpireP.armQ.el.rotation.set(-0.5,0,0);
+  if(age > 120){
+    if(evKind==='six'){ umpireP.armP.sh.rotation.set(-2.9,0,-0.3); umpireP.armQ.sh.rotation.set(-2.9,0,0.3); umpireP.armP.el.rotation.set(0,0,0); umpireP.armQ.el.rotation.set(0,0,0); }
+    else if(evKind==='four'){ umpireP.armP.sh.rotation.set(-0.2,0,-1.45 + Math.sin(t/90)*0.35); umpireP.armP.el.rotation.set(0,0,0); }
+    else if(evKind==='out'){ umpireP.armP.sh.rotation.set(-3.0,0,0); umpireP.armP.el.rotation.set(0,0,0); }
+  }
+  umpireP.root.position.set(1.3, umpireP.root.position.y, BOWL_Z - 1.9); umpireP.root.rotation.y = 0.15;
+
+  // ---- batters (striker + non-striker) ----
+  const running = phase==='run' && run.active, prog = running ? clamp((t - run.tS)/run.dur, 0, 1) : 0;
+  let strikerMood = null;
+  if(age > 200){ if(evKind==='six' || evKind==='four') strikerMood = 'happy'; else if(evKind==='out') strikerMood = 'sad'; }
+  batRigs.forEach(rg => {
+    resetRig(rg);
+    const e0 = END[rg.endIdx], e1 = END[1 - rg.endIdx];
+    let x = e0[0], z = e0[1], face = rg.endIdx===0 ? Math.PI + 0.6 : 0.3, isRun = false;
+    if(running){
+      isRun = true;
+      x = e0[0] + (e1[0]-e0[0])*prog + (rg.endIdx===0 ? 0.45 : -0.45)*Math.sin(Math.PI*prog); z = e0[1] + (e1[1]-e0[1])*prog;
+      face = e1[1] < e0[1] ? Math.PI : 0; poseRunner(rg, prog);
+    } else if(rg.endIdx===0){ poseBatter(rg, t, strikerMood); }
+    else poseWaiter(rg, t);
+    const striker = rg.endIdx===0 && !isRun;
+    rg.bat.visible = striker; rg.bat2.visible = !striker;
+    if(striker && strikerMood==='happy') rg.root.position.y += Math.abs(Math.sin(t/130))*0.1;
+    rg.root.position.x = x; rg.root.position.z = z; rg.root.rotation.y = face;
+    rg.root.updateMatrixWorld(true);
+  });
+  const strRig = strikerRig();
+
+  // ---- ball ----
+  ballM.visible = false; blob.visible = false;
+  if(phase==='runup'){
+    bw.armP.hand.getWorldPosition(ballM.position); ballM.visible = true;
+  } else if(phase==='flight' && pend){
+    const p = Math.min(1,(t-tRelease)/pend.path.D), b = ball3(p, pend.line, pend.path);
+    ballM.position.copy(b); ballM.visible = true;
+    blob.position.set(b.x,0.045,b.z); blob.scale.setScalar(1 - Math.min(0.6,(b.y-R)/3)); blob.visible = true;
+  } else if((phase==='result' || phase==='run') && res){
+    const b = resBallPos(t); ballM.position.copy(b); ballM.visible = true;
+    if(b.y < 1.2 && res.fx!=='six'){ blob.position.set(b.x,0.045,b.z); blob.visible = true; }
+  }
+  if(ballM.visible){ ballM.rotation.x -= DT*14; ballM.rotation.z += DT*5; }
+
+  // ---- stumps ----
+  const f = (phase==='result' && res && res.fx==='bowled') ? Math.min(1,(t-tResult)/600) : 0;
+  stumpM.forEach((m,i)=>{
+    const d = i-1;
+    m.position.set(d*0.11 + d*f*0.5, 0.36 + (f? Math.sin(f*Math.PI)*0.35 - 0.34*f : 0), ZS - f*(0.3+Math.abs(d)*0.2));
+    m.rotation.set(-f*1.1, 0, -d*f*1.3 - (d===0?f*0.2:0));
+  });
+  bailM.forEach((m,i)=>{ m.position.set(-0.055+i*0.11 + (i?1:-1)*f*0.8, 0.735 + (f? Math.sin(f*Math.PI)*1.3 - 0.7*f : 0), ZS - f*1.2); m.rotation.z = f*6*(i?1:-1); });
+
+  // ---- fielders / onlookers ----
+  const chasing = (phase==='run' || (phase==='result' && res && res.field)) && chaser && fieldP;
+  fielders.forEach((fl,i)=>{
+    resetRig(fl); fl.root.position.set(fl.base[0], 0, fl.base[1]); fl.root.rotation.y = fl.face;
+    const ph = t/650 + i*1.3;
+    if(chasing && fl === chaser){
+      const t0 = tResult + 120, t1 = tCollect - 500, u = clamp((t - t0)/(t1 - t0), 0, 1), e = ease2(u);
+      const px = fl.base[0] + (fieldP.x - fl.base[0])*e, pz = fl.base[1] + (fieldP.z - fl.base[1])*e;
+      fl.root.rotation.y = Math.atan2(fieldP.x - fl.base[0], fieldP.z - fl.base[1]);
+      if(u < 1){ runLegs(fl, t/75); fl.torso.rotation.x = 0.3; fl.armP.sh.rotation.set(-0.8,0,0); fl.armQ.sh.rotation.set(0.6,0,0); fl.armP.el.rotation.set(-1,0,0); }
+      else {
+        legs(fl, 0.1, 0.25, -0.1, 0.2); fl.torso.rotation.x = 0.25;
+        const tu = clamp((t - tCollect)/320, 0, 1);
+        if(t >= tCollect - 120) { fl.armP.sh.rotation.set(3.1 - 4.4*ease2(tu), 0, 0); fl.root.rotation.y = Math.atan2(-fieldP.x, (throwEnd==='A' ? 0 : -9.5) - fieldP.z); }
+      }
+      fl.root.position.set(px, fl.root.position.y, pz);
+    } else if(cheer && age > 100){
+      legs(fl,0.05,0.1,-0.05,0.1); celebrate(fl, t + i*70, true); fl.root.position.set(fl.base[0], fl.root.position.y, fl.base[1]);
+    } else {
+      legs(fl, 0.14+Math.sin(ph)*0.02, 0.3, -0.06, 0.26);
+      fl.torso.rotation.x = 0.2 + Math.sin(ph)*0.03; fl.head.rotation.x = -0.15;
+      fl.armP.sh.rotation.set(-0.3,0,0.12); fl.armQ.sh.rotation.set(-0.3,0,-0.12); fl.armP.el.rotation.set(-0.6,0,0); fl.armQ.el.rotation.set(-0.6,0,0);
+    }
+  });
+
+  // ---- particles ----
+  for(let i=0;i<pv.length;i++){
+    const p = pv[i]; if(p.age >= p.max){ ptsPos[i*3+1] = -100; continue; }
+    p.age += DT; p.v.y -= 11*DT; ptsPos[i*3]+=p.v.x*DT; ptsPos[i*3+1]+=p.v.y*DT; ptsPos[i*3+2]+=p.v.z*DT;
+  }
+  pts.geometry.attributes.position.needsUpdate = true; pts.geometry.attributes.color.needsUpdate = true;
+
+  // ---- camera ----
+  _cp.set(-0.55 + Math.sin(t/1800)*0.03, 1.85, 4.6); _lt.copy(LOOK);
+  let fast = false;
+  if(camOverride){ _cp.set(camOverride.p[0],camOverride.p[1],camOverride.p[2]); _lt.set(camOverride.l[0],camOverride.l[1],camOverride.l[2]); fast = true; }
+  else if(age > 260 && age < RES_MS - 150 && ((mode==='bat' && (res.kind==='six' || res.kind==='four' || res.kind==='out')) || (mode==='bowl' && res.kind==='out'))){
+    const rig = mode==='bat' ? strRig : bw, ry = rig.root.rotation.y;
+    _f.set(Math.sin(ry), 0, Math.cos(ry));
+    _cp.set(rig.root.position.x + _f.x*2.4 + 0.3, 1.72, rig.root.position.z + _f.z*2.4);
+    _lt.set(rig.root.position.x, 1.5, rig.root.position.z);
+  }
+  else if(phase==='result' && res && (res.fx==='six' || res.fx==='caught' || res.fx==='four')){
+    const e = ease2(Math.min(1,(t-tResult)/RES_ANIM)); _lt.lerp(resBallPos(t), res.fx==='six' ? 0.28*e : 0.16*e);
+  }
+  const k = fast ? 1 : 0.12;
+  camNow.lerp(_cp, k); lookNow.lerp(_lt, k);
+  camera.position.copy(camNow); if(shake>0.002){ camera.position.y += (Math.random()-.5)*shake; shake *= 0.9; } else shake = 0;
+  camera.lookAt(lookNow);
+}
+let lastT = performance.now();
+function loop(){
+  const t = performance.now(); DT = Math.min(50, t-lastT)/1000; lastT = t;
+  liveTick(t);
+  if(phase==='runup' && t - tPhase >= RUNUP){ phase='flight'; tRelease=t; }
+  if(phase==='flight' && pend){
+    const D = pend.path.D, el = t - tRelease;
+    if(swingT < 0 && el >= SWAT*D - 120) swingT = t;
+    if(el >= pend.p*D) contact(t);
+  }
+  if(phase==='run') runTick(t);
+  if(phase==='result' && t - tRes >= RES_MS-250){ $('#pop').classList.add('fade'); }
+  if(phase==='result' && t - tRes >= RES_MS){ phase='between'; advance(); }
+  if(HAS3D && renderer && scene){ updateScene(t); renderer.render(scene, camera); }
+  requestAnimationFrame(loop);
+}
+
+/* ================= LIVE MATCH (two players, same time) =================
+   Lockstep model: both phones run the same match from the same seed. Only the two choices of each ball are
+   sent through the server (bowler: delivery, batter: shot). Everything else is worked out identically on both. */
+let oppLineup = [], curKey = null, liveMoves = {}, liveLast = 0, liveTimer = 0, waitT = 0, liveErr = 0, waitTimer = 0;
+function liveBowler(over){ const L = mode==='bat' ? oppLineup : lineup; let l = L.filter(p => p.role !== 'BAT'); if(!l.length) l = L; return l[over % l.length]; }
+function liveInit(){
+  oppLineup = lineup.map(p => p.id===0 ? Object.assign({}, p, {id:500, name:cfg.live.oppName || 'Friend'}) : p);
+  liveMoves = {}; liveLast = 0; curKey = null; liveErr = 0; clearInterval(liveTimer); liveTimer = setInterval(livePoll, 550);
+}
+function liveStop(){ clearInterval(liveTimer); liveTimer = 0; }
+async function livePoll(){
+  if(!cfg || !cfg.live || phase==='done'){ liveStop(); return; }
+  try{
+    const rows = await sbReq('GET', 'gci_live_moves?room=eq.' + cfg.live.code + '&id=gt.' + liveLast + '&order=id.asc&select=id,inn,ball,kind,v');
+    rows.forEach(r => { liveLast = Math.max(liveLast, r.id); liveMoves[r.inn + ':' + r.ball + ':' + r.kind] = r.v; }); liveErr = 0;
+  }catch(e){ liveErr++; }
+}
+async function liveSend(kind, v){
+  const row = {room:cfg.live.code, inn, ball:bi, kind, v};
+  liveMoves[inn + ':' + bi + ':' + kind] = v;
+  for(let i = 0; i < 5; i++){
+    try{ await sbReq('POST', 'gci_live_moves', row); return; }
+    catch(e){ if(e.status===409) return; await new Promise(r => setTimeout(r, 700)); }
+  }
+}
+function liveOutcome(si){
+  const landed = curRoll.acc*100 < bowlAcc(curKey, curBowler);
+  curType = landed ? curKey : 'full';
+  const r = playBat(si); r.landedLive = landed;
+  if(r.inplay){ r.auto = curRoll.run < .5 ? 1 : curRoll.run < .85 ? 2 : 3; }
+  return r;
+}
+function liveGo(){ phase = 'runup'; tPhase = performance.now(); swingT = -1; renderActs(); updHud(); setHint(); updDecl(); sb(); }
+function liveWait(){ phase = 'wait'; waitT = performance.now(); renderActs(); setHint(); updDecl(); sb(); }
+function liveAct(i){
+  chosen = i;
+  if(mode==='bowl'){ curKey = BKEYS[i]; liveSend('k', i); liveWait(); }
+  else { liveSend('s', i); pend = liveOutcome(i); liveGo(); }
+}
+function liveTick(t){
+  if(!cfg || !cfg.live || phase !== 'wait') return;
+  if(mode==='bat'){
+    const k = liveMoves[inn + ':' + bi + ':k'];
+    if(k !== undefined){
+      curKey = BKEYS[k]; curType = (curRoll.acc*100 < bowlAcc(curKey, curBowler)) ? curKey : 'full';
+      phase = 'choose'; renderActs(); setHint(); updDecl(); sb(); return;
+    }
+  } else {
+    const s = liveMoves[inn + ':' + bi + ':s'];
+    if(s !== undefined){ chosen = BKEYS.indexOf(curKey); pend = liveOutcome(s); liveGo(); return; }
+  }
+  if(t - waitT > 45000 || liveErr > 6){ const h = $('#hint'); h.textContent = liveErr > 6 ? 'Connection problem… tap ✕ to leave' : 'Friend is not responding… tap ✕ to leave'; h.style.display = ''; }
+}
+function liveBreak(){
+  const bat = mode==='bat';   // role in the innings that just ended
+  $('#vBreak h2').textContent = bat ? 'You made' : (cfg.live.oppName + ' made');
+  $('#bNeed').textContent = bat ? cfg.live.oppName + ' needs ' + (target+1) + ' to win' : 'You need ' + (target+1) + ' to win';
+  $('#bNote').textContent = bat ? 'Now you bowl. Pick a delivery each ball. % = chance it lands. Your friend picks the shot.' : 'Now you bat! Your friend picks the delivery, then you pick a shot. % = chance it works.';
+  $('#brkBtn').textContent = bat ? 'Start bowling 🎳' : 'Start batting 🏏';
+}
+function resetBreak(){
+  $('#vBreak h2').textContent = 'You made';
+  $('#bNote').textContent = 'Now you bowl. Each % is the chance your delivery lands. A miss becomes a loose ball. Each over is bowled by a different player from your XI.';
+  $('#brkBtn').textContent = 'Start bowling 🎳';
+}
+
+/* ---- lobby ---- */
+function stopWait(){ clearInterval(waitTimer); waitTimer = 0; }
+function liveSection(b, add){
+  add('🔴 LIVE MATCH · PLAY TOGETHER NOW', 'lab');
+  const cr = document.createElement('button'); cr.className = 'btn gold'; cr.style.marginTop = '4px'; cr.textContent = 'Create live room ⚡';
+  cr.addEventListener('click', () => createRoom(null)); b.appendChild(cr);
+  const f = document.createElement('div'); f.style.cssText = 'display:flex;gap:6px;margin-top:8px'; b.appendChild(f);
+  const inp = document.createElement('input'); inp.id = 'lvCode'; inp.inputMode = 'numeric'; inp.maxLength = 6; inp.placeholder = '6-digit room code';
+  inp.style.cssText = 'flex:1;padding:11px;border-radius:10px;border:1px solid #2b4570;background:#0b1424;color:var(--ink);font-size:15px;min-width:0;-webkit-user-select:text;user-select:text';
+  const jb = document.createElement('button'); jb.className = 'btn blue'; jb.style.cssText = 'width:auto;margin:0;padding:0 16px'; jb.textContent = 'Join';
+  jb.addEventListener('click', () => joinRoom(($('#lvCode').value || '').replace(/\D/g, ''))); f.append(inp, jb);
+  add('Uses the overs and difficulty chosen above. Both players use the same fixed XI, so skill decides the winner.', 'note');
+}
+async function liveInvites(box){
+  try{
+    const since = new Date(Date.now() - 15*60*1000).toISOString();
+    const rows = await sbReq('GET', 'gci_live?to_uid=eq.' + S.uid + '&status=eq.waiting&guest_uid=is.null&created_at=gt.' + since + '&order=created_at.desc&limit=5&select=*');
+    rows.forEach(r => {
+      const d = document.createElement('div'); d.className = 'sq in';
+      d.innerHTML = '<div class="nf"><b>🔴 ' + esc(r.host_name) + ' wants to play LIVE</b><span>' + r.overs + ' over' + (r.overs>1?'s':'') + ' · ' + DIFFS[r.diff].name + '</span></div>';
+      const j = document.createElement('button'); j.className = 'cb on'; j.textContent = 'Join'; j.addEventListener('click', () => joinRoom(r.code)); d.appendChild(j); box.appendChild(d);
+    });
+  }catch(e){}
+}
+async function createRoom(fr){
+  if(!S.name) return setFrMsg('Set your name on the main menu first.');
+  const code = String(100000 + Math.floor(Math.random()*900000));
+  const room = {code, host_uid:S.uid, host_name:S.name, to_uid:fr ? fr.uid : null, seed:newSeed(), overs:S.fr.overs, diff:S.fr.diff, gi:Math.floor(Math.random()*GROUNDS.length), status:'waiting'};
+  try{ await sbReq('POST', 'gci_live', room); }
+  catch(e){ if(e.status===409) return createRoom(fr); return setFrMsg('Could not create the room. Check your internet.'); }
+  showWait(room, fr);
+}
+function showWait(room, fr){
+  stopWait();
+  const b = $('#frBody'); b.innerHTML = '';
+  b.innerHTML = '<div class="lab">ROOM CODE</div><div class="rule"><div class="score" style="font-size:44px;letter-spacing:4px">' + room.code + '</div><div class="note" id="lvWait" style="margin-top:2px">' + (fr ? 'Waiting for ' + esc(fr.name) + ' to join…' : 'Send this code to your friend. Waiting for them to join…') + '</div></div>';
+  const cp = document.createElement('button'); cp.className = 'btn ghost small'; cp.textContent = 'Copy code'; cp.addEventListener('click', () => copyText(room.code, cp)); b.appendChild(cp);
+  const wa = document.createElement('button'); wa.className = 'btn wa small'; wa.textContent = 'Send on WhatsApp';
+  wa.addEventListener('click', () => window.open('https://wa.me/?text=' + encodeURIComponent('🏏 Join my LIVE Gully Cricket India match! Open Play with Friends → Join, room code: ' + room.code + '\n' + location.href.split(/[?#]/)[0]), '_blank')); b.appendChild(wa);
+  const cn = document.createElement('button'); cn.className = 'btn ghost small'; cn.textContent = 'Cancel'; cn.addEventListener('click', () => { stopWait(); renderFriends(); }); b.appendChild(cn);
+  const t0 = Date.now();
+  waitTimer = setInterval(async () => {
+    if(Date.now() - t0 > 10*60*1000){ stopWait(); const w = $('#lvWait'); if(w) w.textContent = 'Room expired. Cancel and create a new one.'; return; }
+    try{
+      const rows = await sbReq('GET', 'gci_live?code=eq.' + room.code + '&select=guest_uid,guest_name');
+      if(rows.length && rows[0].guest_uid){ stopWait(); startLive(room, true, rows[0].guest_name); }
+    }catch(e){}
+  }, 1000);
+}
+async function joinRoom(code){
+  if(!S.name) return setFrMsg('Set your name on the main menu first.');
+  if(code.length !== 6) return setFrMsg('A room code has 6 digits.');
+  setFrMsg('Joining…');
+  try{
+    const since = new Date(Date.now() - 15*60*1000).toISOString();
+    const rows = await sbReq('GET', 'gci_live?code=eq.' + code + '&guest_uid=is.null&status=eq.waiting&created_at=gt.' + since + '&select=*');
+    if(!rows.length) return setFrMsg('Room not found, expired, or already started.');
+    const room = rows[0];
+    if(room.host_uid === S.uid) return setFrMsg('That is your own room. Ask your friend to join it.');
+    if(room.to_uid && room.to_uid !== S.uid) return setFrMsg('This room is for another player.');
+    await sbReq('PATCH', 'gci_live?code=eq.' + code + '&guest_uid=is.null', {guest_uid:S.uid, guest_name:S.name, status:'playing'});
+    const chk = await sbReq('GET', 'gci_live?code=eq.' + code + '&select=guest_uid');
+    if(!chk.length || chk[0].guest_uid !== S.uid) return setFrMsg('Someone else joined first.');
+    startLive(room, false, room.host_name);
+  }catch(e){ setFrMsg('Could not join. Check your internet.'); }
+}
+function startLive(room, isHost, oppName){
+  startMatch({kind:'live', fmt:'intl', overs:room.overs, diff:room.diff, gi:room.gi, seed:room.seed, opp:oppName || 'Friend', live:{code:room.code, isHost, oppName:oppName || 'Friend'}});
+}
+
+/* ================= UI: hint, HUD, scoreboard, action cards ================= */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let curRec = null, tab = 'all';
+const TOUR_ROUNDS = [
+  {name:'Group Stage', overs:2}, {name:'Quarter-final', overs:2}, {name:'Semi-final', overs:3}, {name:'FINAL', overs:5}
+];
+const DEFAULT_XI = [0,1,2,3,4,5,6,7,8,9,10];
+
+function setGroundBar(){
+  const g = $('#groundBar'); g.textContent = '';
+  const b = document.createElement('b'); b.textContent = G.emoji + ' ' + G.name; g.append(b, ' · ' + G.rule);
+}
+function curBatPl(){ const c = card[strikerRig().ci]; return c ? c.pl : null; }
+function setHint(){
+  const h = $('#hint');
+  if(!cfg || phase==='idle' || phase==='break' || phase==='done' || phase==='run'){ h.style.display = 'none'; return; }
+  if(phase==='wait'){ h.textContent = mode==='bat' ? '⏳ Bowler is choosing…' : '⏳ Batter is choosing…'; h.style.display = ''; return; }
+  if(phase==='result' || phase==='between'){ h.textContent = '🎙 ' + comm; h.style.display = ''; return; }
+  if(mode==='bat'){
+    const d = DEL[curType || 'good'], pl = curBatPl(), ab = pl && pl.bat && pl.id!==0 ? ' · ' + ABIL[pl.bat].n : '';
+    h.textContent = phase==='choose' ? d.emoji + ' ' + d.name.toUpperCase() + ' · ' + (pl ? first(pl) : '') + ab : d.emoji + ' ' + d.name + ' · ' + SHOTS[chosen].name + ' (' + pend.chance + '%)';
+  } else {
+    h.textContent = phase==='choose' ? first(curBowler) + ' to bowl · % = chance it lands' : DEL[BKEYS[chosen]].emoji + ' ' + DEL[BKEYS[chosen]].name + (cfg.live ? '' : ' (' + pend.chance + '% to land)');
+  }
+  h.style.display = '';
+}
+function updDecl(){
+  $('#declBtn').style.display = (cfg && mode==='bat' && cfg.fmt==='test' && phase==='choose') ? 'block' : 'none';
+}
+function updHud(){
+  if(!cfg){ return; }
+  $('#scoreL').textContent = mode==='bat' ? 'YOUR RUNS' : 'AI SCORE';
+  $('#scoreV').textContent = sum + '/' + wkts;
+  const el = $('#balls'); el.innerHTML = '';
+  for(let i = 0; i < 6; i++){
+    const d = document.createElement('div'); d.className = 'bl'; const r = overRes[i];
+    if(r){
+      if(mode==='bat'){
+        d.classList.add(r.kind);
+        d.textContent = (r.kind==='six'||r.kind==='four'||r.kind==='run') ? r.runs : r.kind==='out' ? 'W' : r.kind==='saved' ? '♥' : '•';
+      } else if(r.kind==='out'){ d.classList.add('wk'); d.textContent = 'W'; }
+      else if(r.kind==='six'||r.kind==='four'){ d.classList.add('conc'); d.textContent = r.runs; }
+      else if(r.kind==='run'){ d.classList.add('run'); d.textContent = r.runs; }
+      else { d.classList.add('dot'); d.textContent = '•'; }
+    } else if(i === overRes.length && (phase==='choose'||phase==='runup'||phase==='flight'||phase==='run')) d.classList.add('cur');
+    el.appendChild(d);
+  }
+}
+function sb(){
+  const el = $('#sb');
+  if(!cfg || !card.length || phase==='done' || phase==='break' || phase==='idle'){ el.style.display = 'none'; return; }
+  el.style.display = '';
+  const balls = bi + (phase==='result' ? 1 : 0), you = mode==='bat';
+  const nm = you ? (cfg.my ? cfg.my.short : 'YOU') : (cfg.op ? cfg.op.short : (cfg.opp || 'AI')), ovs = isFinite(cfg.maxBalls) ? '/' + cfg.overs : '';
+  let right;
+  if(inn===2){
+    const need = Math.max(0, target + 1 - sum), left = cfg.maxBalls - balls;
+    right = 'Need ' + need + (isFinite(left) ? ' off ' + Math.max(0, left) : '');
+  } else right = cfg.fmt==='test' ? 'Test · 1st inns' : (cfg.kind==='tour' ? TOUR_ROUNDS[cfg.round].name : '1st innings');
+  const sr = strikerRig(), nr = nonRig(), cs = card[sr.ci], cn = card[nr.ci];
+  const f = c => c ? first(c.pl) + ' ' + c.runs + '(' + c.balls + ')' : '-';
+  const bwl = (you && !cfg.live) ? 'AI bowler' : first(curBowler);
+  el.innerHTML = '<div class="l1"><span>' + esc(nm) + ' <b>' + sum + '/' + wkts + '</b> (' + oversOf(balls) + ovs + ')</span><span>' + esc(right) + '</span></div>'
+    + '<div class="l2">🏏 ★' + esc(f(cs)) + ' · ' + esc(f(cn)) + ' &nbsp;🎳 ' + esc(bwl) + '</div>';
+}
+function renderActs(){
+  const box = $('#acts'); box.innerHTML = '';
+  if(!cfg || !card.length){ box.className = 'off'; return; }
+  if(phase==='run' && mode==='bat' && !run.auto){
+    box.className = 'runmode';
+    box.innerHTML = '<button type="button" class="runBtn" id="runBtn">RUN! 🏃</button><div class="runbar"><i id="runFill"></i></div><div class="runTxt" id="runTxt"></div><button type="button" class="stopBtn">Stay put (no run)</button>';
+    return;
+  }
+  if(cfg.live && phase==='wait'){ box.className = 'off'; box.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:15px;font-weight:900;color:var(--gold);padding:22px 0">' + (mode==='bat' ? '⏳ Bowler is choosing the delivery…' : '⏳ Batter is choosing the shot…') + '</div>'; return; }
+  const bat = mode==='bat';
+  box.className = phase==='choose' ? '' : 'off';
+  const d = curType || 'good', pl = curBatPl();
+  const items = bat
+    ? SHOTS.map((s,i)=>({i, pc:batChance(s.id, d, pl), nm:s.name, tag:s.tag, sub:''}))
+    : BKEYS.map((k,i)=>({i, pc:bowlAcc(k, curBowler), nm:DEL[k].emoji+' '+DEL[k].name, tag:'', sub:cfg.live ? 'Batter picks a shot next' : 'Wicket if it lands: '+bowlWk(k, curBowler)+'%'}));
+  items.forEach(o=>{
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'act' + ((o.i===chosen && phase!=='choose' && phase!=='idle') ? ' sel' : ''); b.dataset.i = o.i;
+    const cls = o.pc>=60 ? 'hi' : o.pc>=40 ? 'mid' : 'lo';
+    b.innerHTML = '<div class="top"><span class="pc '+cls+'">'+o.pc+'%</span>'+(o.tag?'<span class="tag">'+o.tag+'</span>':'')+'</div>'
+      + '<div><div class="nm">'+o.nm+'</div>'+(o.sub?'<div class="sb">'+o.sub+'</div>':'')+'</div>'
+      + '<div class="bar"><i class="'+cls+'" style="width:'+o.pc+'%"></i></div>';
+    box.appendChild(b);
+  });
+}
+
+/* ================= FACE PHOTO ================= */
+function photoToFace(img){
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  const s = Math.min(img.width, img.height), sx = (img.width - s)/2, sy = (img.height - s)*0.3;
+  x.drawImage(img, sx, sy, s, s, 0, 0, 256, 256);
+  const g = x.createRadialGradient(128,128,78,128,128,128); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(0.8,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  x.globalCompositeOperation = 'destination-in'; x.fillStyle = g; x.fillRect(0,0,256,256);
+  return c;
+}
+function paintAvatar(url){
+  const a = $('#avatar');
+  a.style.backgroundImage = url ? 'url('+url+')' : ''; a.textContent = url ? '' : '🙂';
+  $('#faceBtn').textContent = url ? '📸 Change photo' : '📸 Add your face'; $('#faceDel').style.display = url ? '' : 'none';
+}
+function setUserFace(c, persist){
+  FACE.user = c; FACE.userTex = null; let url = '';
+  try{ url = c.toDataURL('image/png'); }catch(e){}
+  if(persist){ try{ localStorage.setItem('gcd_face', url); }catch(e){} }
+  paintAvatar(url); applyRoles();
+}
+function clearFace(){
+  FACE.user = null; FACE.userTex = null; try{ localStorage.removeItem('gcd_face'); }catch(e){}
+  paintAvatar(''); applyRoles();
+}
+function loadFace(){
+  let url = null; try{ url = localStorage.getItem('gcd_face'); }catch(e){}
+  if(!url) return;
+  const im = new Image();
+  im.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 256; c.getContext('2d').drawImage(im,0,0,256,256); setUserFace(c, false); };
+  im.src = url;
+}
+
+/* ================= SHARE + LEADERBOARD ================= */
+function kindLabel(rec){
+  if(rec.kind==='daily') return 'Daily Challenge #' + DAY;
+  if(rec.kind==='live') return 'Live Match · ' + rec.overs + ' over' + (rec.overs>1?'s':'') + ' · ' + DIFFS[rec.diff].name;
+  if(rec.kind==='friend') return 'Friend Challenge · ' + rec.overs + ' over' + (rec.overs>1?'s':'') + ' · ' + DIFFS[rec.diff].name;
+  if(rec.kind==='tour') return 'Tournament · ' + TOUR_ROUNDS[rec.round].name + ' · ' + DIFFS[rec.diff].name;
+  return FORMATS[rec.fmt].name + (rec.fmt==='test' ? '' : ' · ' + rec.overs + ' over' + (rec.overs>1?'s':'')) + ' · ' + DIFFS[rec.diff].name;
+}
+function shareText(rec){
+  const url = location.href.split(/[?#]/)[0];
+  const verdict = rec.outcome==='won' ? 'WON by ' + (rec.bat.runs - rec.bowl.runs) + ' runs' : rec.outcome==='tied' ? 'TIED' : 'LOST (AI chased it)';
+  return '🏏 Gully Cricket India\n' + kindLabel(rec) + '\n' + G.emoji + ' ' + G.name + '\nBat ' + rec.bat.runs + '/' + rec.bat.wkts + ' ' + rowOf(rec.bat.allRes,'bat')
+    + '\nBowl AI ' + rec.bowl.runs + '/' + rec.bowl.wkts + ' ' + rowOf(rec.bowl.allRes,'bowl')
+    + '\n' + verdict + (rec.score!=null ? ' · ' + rec.score + ' pts — "' + titleFor(rec.score) + '"' : '') + '\nBeat me 👇\n' + url;
+}
+function copyText(txt, btn){
+  const done = () => { const o = btn.textContent; btn.textContent = 'Copied ✔'; setTimeout(()=>btn.textContent=o,1500); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, done); }
+  else { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); done(); }
+}
+const SB = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+function sbHeaders(extra){ const h = {apikey:SUPABASE_ANON_KEY}; if(SUPABASE_ANON_KEY.startsWith('eyJ')) h.Authorization = 'Bearer ' + SUPABASE_ANON_KEY; return Object.assign(h, extra||{}); }
+async function sbPost(rec){
+  await fetch(SUPABASE_URL+'/rest/v1/gcd_scores', {method:'POST', headers:sbHeaders({'Content-Type':'application/json', Prefer:'return=minimal'}),
+    body:JSON.stringify({day:DAY, name:S.name, grp:S.grp, score:rec.score})});
+}
+async function sbTop(grp){
+  let u = SUPABASE_URL+'/rest/v1/gcd_scores?select=name,grp,score&day=eq.'+DAY+'&order=score.desc,created_at.asc&limit=10';
+  if(grp) u += '&grp=eq.'+encodeURIComponent(grp);
+  const r = await fetch(u, {headers:sbHeaders()}); return r.json();
+}
+async function renderLb(){
+  const box = $('#lb'); box.textContent = '';
+  $('#tAll').classList.toggle('on', tab==='all'); $('#tGrp').classList.toggle('on', tab==='grp');
+  const msg = m => { const d = document.createElement('div'); d.className='note'; d.textContent=m; box.appendChild(d); };
+  if(!SB){ msg('Leaderboard opens soon. Your score is saved on this phone.'); return; }
+  if(tab==='grp' && !S.grp){ msg('Post your score with a mohalla / city / college name to see your group board.'); return; }
+  msg('Loading…');
+  try{
+    const rows = await sbTop(tab==='grp' ? S.grp : '');
+    box.textContent = '';
+    if(!rows.length){ msg('No scores yet. Be the first!'); return; }
+    rows.forEach((r,i) => {
+      const d = document.createElement('div'); d.className='lr';
+      const n = document.createElement('div'); n.className='n'; n.textContent = (i+1)+'. '+r.name;
+      const g = document.createElement('div'); g.className='g'; g.textContent = r.grp || '';
+      const s = document.createElement('div'); s.className='s'; s.textContent = r.score;
+      d.append(n,g,s); box.appendChild(d);
+    });
+  }catch(e){ box.textContent=''; msg('Could not load the leaderboard. Check your connection.'); }
+}
+function cd(){
+  const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate()+1);
+  const s = Math.floor((m-n)/1000), p = v => String(v).padStart(2,'0');
+  const el = $('#cd'); if(el) el.textContent = p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60);
+}
+
+/* ================= VIEWS ================= */
+const VIEWS = ['Menu','Quick','Tour','Squad','Quiz','Friends','Break','Res'];
+function showView(n){
+  if(n !== 'Friends') stopWait();
+  VIEWS.forEach(v => { $('#v'+v).style.display = v===n ? '' : 'none'; });
+  ov.classList.remove('hidden'); ov.scrollTop = 0;
+  if(n==='Menu') renderMenu(); else if(n==='Quick') renderQuick(); else if(n==='Tour') renderTour(); else if(n==='Squad') renderSquad(); else if(n==='Quiz') quizHome(); else if(n==='Friends') renderFriends();
+}
+function goHome(){ showView('Menu'); }
+function renderMenu(){
+  updWallet();
+  const p = S.plays[DAY];
+  $('#mDailySub').textContent = G.emoji + ' ' + GROUNDS[DAYG].name + (p ? ' · best ' + p.score + ' pts' : ' · new challenge today!');
+  const xi = getXI(); $('#mSquadSub').textContent = 'XI ready · ' + S.unlocked.length + '/' + PLAYERS.length + ' players unlocked';
+  void xi;
+}
+
+/* ---- Daily ---- */
+function startDaily(){
+  startMatch({kind:'daily', fmt:'daily', overs:1, diff:'medium', gi:DAYG, seed:DAY*7919 + 13, opp:OPP[DAY % OPP.length]});
+}
+
+/* ---- Quick Play ---- */
+function qp(){ if(!S.qp) S.qp = {fmt:'intl', overs:2, diff:'medium', gi:2}; if(S.qp.my==null){ S.qp.my = 0; S.qp.opp = 1; } return S.qp; }
+function mkChips(id, items, cur, fn){
+  const box = $(id); box.innerHTML = '';
+  items.forEach(it => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cb' + (String(it.v)===String(cur) ? ' on' : '') + (it.dis ? ' dis' : '');
+    b.textContent = it.t; b.addEventListener('click', () => fn(it.v)); box.appendChild(b);
+  });
+}
+function estReward(q){
+  const D = DIFFS[q.diff], base = q.fmt==='test' ? 150 : 10 + q.overs*9;
+  const c = Math.round(base * (q.fmt==='ipl' ? 1.1 : 1) * D.coin), g = (q.diff==='hard' ? 1 : q.diff==='extreme' ? 2 : 0);
+  return c + ' 🪙' + (g ? ' + ' + g + ' 💎' : '');
+}
+function renderQuick(){
+  const q = qp();
+  mkChips('#qpFmt', [{v:'ipl',t:'⚡ IPL Style'},{v:'intl',t:'🌏 International'},{v:'test',t:'🥇 Test Match'}], q.fmt, v => { q.fmt = v; saveS(); renderQuick(); });
+  mkChips('#qpOvers', q.fmt==='test' ? [{v:0,t:'∞ Unlimited overs'}] : [1,2,5,10].map(o => ({v:o, t:o + (o>1?' overs':' over')})), q.fmt==='test' ? 0 : q.overs, v => { q.overs = v; saveS(); renderQuick(); });
+  mkChips('#qpDiff', Object.keys(DIFFS).map(k => ({v:k, t:DIFFS[k].name})), q.diff, v => { q.diff = v; saveS(); renderQuick(); });
+  const tl = (TEAMS[q.fmt]||TEAMS.intl).map((t,i)=>({v:i,t:t[0]}));
+  mkChips('#qpMy', tl.map(x => Object.assign({}, x, {dis:x.v===q.opp})), q.my, v => { q.my = v; saveS(); renderQuick(); });
+  mkChips('#qpOpp', tl.map(x => Object.assign({}, x, {dis:x.v===q.my})), q.opp, v => { q.opp = v; saveS(); renderQuick(); });
+  mkChips('#qpGround', GROUNDS.map((g,i) => ({v:i, t:g.emoji + ' ' + g.name})), q.gi, v => { q.gi = v; saveS(); renderQuick(); });
+  $('#qpInfo').textContent = GROUNDS[q.gi].rule + ' · Win reward: ' + estReward(q) + (q.fmt==='test' ? ' · Use Declare to end your innings.' : '');
+}
+function startQuick(){
+  const q = qp();
+  startMatch({kind:'quick', fmt:q.fmt, overs:q.fmt==='test' ? 0 : q.overs, diff:q.diff, gi:q.gi, myIdx:q.my, oppIdx:q.opp});
+}
+
+/* ---- Tournament ---- */
+let tourDiff = 'medium';
+function renderTour(){
+  const b = $('#tourBody'); b.innerHTML = '';
+  const add = (html, cls) => { const d = document.createElement('div'); if(cls) d.className = cls; d.innerHTML = html; b.appendChild(d); return d; };
+  if(!S.tour){
+    add('4 rounds: Group Stage → Quarter-final → Semi-final → FINAL.<br>Lose or tie and you are out. Win all four to become champion!', 'note');
+    add('CHOOSE DIFFICULTY', 'lab');
+    const row = add('', 'chiprow');
+    Object.keys(DIFFS).forEach(k => {
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'cb' + (k===tourDiff ? ' on' : ''); x.textContent = DIFFS[k].name;
+      x.addEventListener('click', () => { tourDiff = k; renderTour(); }); row.appendChild(x);
+    });
+    const T = DIFFS[tourDiff].tour;
+    add('🏆 Champion prize: <b>' + T.c + ' 🪙 + ' + T.g + ' 💎</b><br><span style="font-size:12px;color:var(--mut)">Every round you win also pays coins (x' + DIFFS[tourDiff].coin + ' on ' + DIFFS[tourDiff].name + ').</span>', 'rule');
+    const s = document.createElement('button'); s.className = 'btn gold'; s.type = 'button'; s.textContent = 'Start tournament 🏆';
+    s.addEventListener('click', () => { S.tour = {diff:tourDiff, round:0}; saveS(); renderTour(); }); b.appendChild(s);
+  } else {
+    const t = S.tour, T = DIFFS[t.diff].tour;
+    add('Difficulty: <b>' + DIFFS[t.diff].name + '</b> · Prize: <b>' + T.c + ' 🪙 + ' + T.g + ' 💎</b>', 'rule');
+    TOUR_ROUNDS.forEach((r,i) => {
+      add((i < t.round ? '✅' : i===t.round ? '▶️' : '🔒') + ' <b>' + r.name + '</b> · ' + r.overs + ' overs', i===t.round ? 'rule' : 'note');
+    });
+    const p = document.createElement('button'); p.className = 'btn gold'; p.type = 'button'; p.textContent = 'Play ' + TOUR_ROUNDS[t.round].name + ' 🏏';
+    p.addEventListener('click', playTourRound); b.appendChild(p);
+    const a = document.createElement('button'); a.className = 'btn ghost small'; a.type = 'button'; a.style.marginTop = '8px'; a.textContent = 'Abandon tournament';
+    let sure = false; a.addEventListener('click', () => { if(!sure){ sure = true; a.textContent = 'Tap again to abandon'; return; } S.tour = null; saveS(); renderTour(); });
+    b.appendChild(a);
+  }
+}
+function playTourRound(){
+  const t = S.tour; if(!t) return;
+  startMatch({kind:'tour', fmt:'intl', overs:TOUR_ROUNDS[t.round].overs, diff:t.diff, round:t.round, gi:(t.round*2 + 1) % GROUNDS.length, myIdx:0, oppIdx:t.round + 1});
+}
+
+/* ---- Squad ---- */
+let unlockId = -1;
+function renderSquad(){
+  const xi = getXI().map(p => p.id); S.xi = xi;
+  $('#sqCount').textContent = 'Your XI: ' + xi.length + '/11 · 🪙 ' + S.coins + ' · 💎 ' + S.gems;
+  const box = $('#sqList'); box.innerHTML = '';
+  const order = PLAYERS.slice().sort((a,b) => (S.unlocked.includes(b.id) - S.unlocked.includes(a.id)) || (a.id - b.id));
+  order.forEach(p => {
+    const un = S.unlocked.includes(p.id), inXI = xi.includes(p.id);
+    const d = document.createElement('div'); d.className = 'sq' + (inXI ? ' in' : '') + (un ? '' : ' lock');
+    const abil = [p.bat ? ABIL[p.bat] : null, p.bowl ? BABIL[p.bowl] : null].filter(Boolean).map(a => a.n + ': ' + a.d).join(' · ');
+    const price = p.rar==='L' ? PRICE.L + ' 💎' : PRICE[p.rar] + ' 🪙';
+    const st = un ? (inXI ? '✔ In XI' : 'Add') : (unlockId===p.id ? 'Tap to buy ' + price : '🔒 ' + price);
+    d.innerHTML = '<div class="no">' + p.no + '</div><div class="nf"><b>' + esc(p.id===0 ? (S.name || 'You') : p.name) + ' <span class="rar-' + p.rar + '">' + RARN[p.rar] + '</span></b><span>' + p.role + ' · ' + esc(abil) + '</span></div><div class="st">' + st + '</div>';
+    d.addEventListener('click', () => squadTap(p));
+    box.appendChild(d);
+  });
+}
+function squadTap(p){
+  const un = S.unlocked.includes(p.id);
+  if(un){
+    if(p.id===0) return;
+    const i = S.xi.indexOf(p.id);
+    if(i >= 0) S.xi.splice(i,1); else if(S.xi.length < 11) S.xi.push(p.id); else { $('#sqCount').textContent = 'XI is full. Remove a player first.'; return; }
+    saveS(); renderSquad(); return;
+  }
+  if(unlockId !== p.id){ unlockId = p.id; renderSquad(); return; }
+  const gem = p.rar==='L', cost = gem ? PRICE.L : PRICE[p.rar];
+  if((gem ? S.gems : S.coins) < cost){ $('#sqCount').textContent = 'Not enough ' + (gem ? '💎 gems' : '🪙 coins') + '. Win matches to earn more!'; unlockId = -1; return; }
+  if(gem) S.gems -= cost; else S.coins -= cost;
+  S.unlocked.push(p.id); if(S.xi.length < 11) S.xi.push(p.id);
+  unlockId = -1; saveS(); updWallet(); renderSquad();
+}
+
+/* ---- Quiz ---- */
+let qz = null;
+function quizHome(){
+  qz = null; const b = $('#quizBody'); b.innerHTML = '';
+  const lab = document.createElement('div'); lab.className = 'lab'; lab.textContent = 'CHOOSE YOUR LEVEL'; b.appendChild(lab);
+  const row = document.createElement('div'); row.className = 'chiprow'; b.appendChild(row);
+  Object.keys(QUIZ).forEach(k => {
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'cb' + (S.band===k ? ' on' : ''); x.textContent = QUIZ[k].name + ' · ' + QUIZ[k].coin + ' 🪙';
+    x.addEventListener('click', () => { S.band = k; saveS(); quizHome(); }); row.appendChild(x);
+  });
+  const n = document.createElement('div'); n.className = 'note'; n.textContent = '5 questions. Every right answer wins ' + QUIZ[S.band].coin + ' 🪙. Questions are picked for the level you choose.'; b.appendChild(n);
+  const s = document.createElement('button'); s.type = 'button'; s.className = 'btn gold'; s.textContent = 'Start quiz 🧠'; s.addEventListener('click', quizStart); b.appendChild(s);
+}
+function shuf(a){ a = a.slice(); for(let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+function quizStart(){ qz = {qs:shuf(QUIZ[S.band].qs).slice(0,5), i:0, ok:0}; quizShow(); }
+function quizShow(){
+  const b = $('#quizBody'); b.innerHTML = '';
+  if(qz.i >= qz.qs.length){
+    const earned = qz.ok * QUIZ[S.band].coin;
+    b.innerHTML = '<div class="big">' + (qz.ok >= 4 ? '🏆' : qz.ok >= 2 ? '👏' : '💪') + '</div><div class="title">You got ' + qz.ok + ' / ' + qz.qs.length + '</div><div class="reward">+' + earned + ' 🪙</div>';
+    const a = document.createElement('button'); a.type = 'button'; a.className = 'btn gold'; a.textContent = 'Play again'; a.addEventListener('click', quizStart); b.appendChild(a);
+    return;
+  }
+  const [q, opts, ci, ex] = qz.qs[qz.i];
+  const h = document.createElement('div'); h.className = 'mut'; h.textContent = 'QUESTION ' + (qz.i+1) + ' / ' + qz.qs.length; b.appendChild(h);
+  const qq = document.createElement('div'); qq.className = 'qq'; qq.textContent = q; b.appendChild(qq);
+  const list = shuf(opts.map((t,i) => ({t, c:i===ci}))); let done = false;
+  list.forEach(o => {
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'qo'; x.textContent = o.t;
+    x.addEventListener('click', () => {
+      if(done) return; done = true;
+      b.querySelectorAll('.qo').forEach((el,k) => { if(list[k].c) el.classList.add('good'); });
+      if(o.c){ qz.ok++; addCoins(QUIZ[S.band].coin); } else x.classList.add('bad');
+      const e = document.createElement('div'); e.className = 'qx'; e.textContent = (o.c ? '✅ Correct! +' + QUIZ[S.band].coin + ' 🪙  ' : '❌ Not quite.  ') + ex; b.appendChild(e);
+      const nx = document.createElement('button'); nx.type = 'button'; nx.className = 'btn gold'; nx.textContent = qz.i+1 >= qz.qs.length ? 'See score' : 'Next ▶';
+      nx.addEventListener('click', () => { qz.i++; quizShow(); }); b.appendChild(nx);
+    });
+    b.appendChild(x);
+  });
+}
+
+/* ---- Result ---- */
+function showResult(rec){
+  curRec = rec; Object.assign(rec, {fmt:cfg.fmt, overs:cfg.overs, diff:cfg.diff, round:cfg.round});
+  showView('Res');
+  const daily = rec.kind==='daily', won = rec.outcome==='won';
+  $('#rHead').textContent = kindLabel(rec).toUpperCase();
+  if(daily || rec.kind==='friend'){ $('#rScore').textContent = rec.score; $('#rUnit').textContent = 'pts'; $('#rTitle').textContent = rec.kind==='friend' ? 'Your challenge score' : '“' + titleFor(rec.score) + '”'; }
+  else { $('#rScore').textContent = rec.bat.runs + '/' + rec.bat.wkts; $('#rUnit').textContent = 'vs ' + rec.bowl.runs + '/' + rec.bowl.wkts; $('#rTitle').textContent = won ? 'Jeet gaye! 🎉' : rec.outcome==='tied' ? 'Tie! 🤝' : 'Haar gaye 😢'; }
+  const v = $('#rVerd'); v.className = 'verd ' + (won ? 'w' : rec.outcome==='lost' ? 'l' : 't');
+  v.textContent = won ? 'YOU WON by ' + (rec.bat.runs - rec.bowl.runs) + ' runs' : rec.outcome==='tied' ? 'MATCH TIED' : 'YOU LOST · AI chased it down';
+  if(rec.kind==='live') v.textContent = (won ? 'YOU WON! ' : rec.outcome==='tied' ? 'TIED ' : 'YOU LOST ') + rec.bat.runs + '/' + rec.bat.wkts + ' vs ' + rec.bowl.runs + '/' + rec.bowl.wkts;
+  const rw = $('#rReward'); let txt = '';
+  if(rec.coins || rec.gems) txt = '+' + rec.coins + ' 🪙' + (rec.gems ? '  +' + rec.gems + ' 💎' : '');
+  if(rec.tourDone) txt = '🏆 TOURNAMENT CHAMPION!<br>' + txt;
+  else if(rec.tourOut) txt = 'Knocked out of the tournament.' + (txt ? '<br>' + txt : '');
+  else if(rec.kind==='tour' && won) txt = 'Round cleared! Next: ' + TOUR_ROUNDS[S.tour.round].name + (txt ? '<br>' + txt : '');
+  if(!txt && daily && won) txt = 'Coins for the daily win were already collected today.';
+  rw.innerHTML = txt; rw.style.display = txt ? '' : 'none';
+  $('#rBT').textContent = '· ' + rec.bat.runs + '/' + rec.bat.wkts; $('#rRowB').textContent = rowOf(rec.bat.allRes,'bat');
+  $('#rWT').textContent = '· ' + (rec.kind==='live' ? cfg.opp : 'AI') + ' ' + rec.bowl.runs + '/' + rec.bowl.wkts; $('#rRowW').textContent = rowOf(rec.bowl.allRes,'bowl');
+  const posted = !!(S.plays[DAY] && S.plays[DAY].posted);
+  $('#lbBox').style.display = daily ? '' : 'none'; $('#cdBox').style.display = daily ? '' : 'none';
+  $('#rForm').style.display = (daily && !posted) ? '' : 'none';
+  if(rec.kind==='friend') friendFinish(rec);
+  $('#againBtn').textContent = (rec.kind==='friend' || rec.kind==='live') ? 'Back to Friends' : rec.kind==='tour' ? (S.tour ? 'Next round ▶' : 'Tournament menu') : 'Play again';
+  $('#nm').value = S.name; $('#gp').value = S.grp;
+  if(daily){ tab = 'all'; renderLb(); }
+}
+
+/* ================= WIRING ================= */
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if(!g) return;
+  const k = g.dataset.go;
+  if(k==='daily') startDaily(); else if(k==='menu') goHome();
+  else showView({quick:'Quick', tour:'Tour', squad:'Squad', quiz:'Quiz', friends:'Friends'}[k]);
+});
+$('#qpStart').addEventListener('click', startQuick);
+$('#brkBtn').addEventListener('click', startInn2);
+$('#againBtn').addEventListener('click', () => {
+  if(!curRec) return goHome();
+  if(curRec.kind==='daily') startDaily(); else if(curRec.kind==='quick') startQuick();
+  else if(curRec.kind==='friend' || curRec.kind==='live') showView('Friends');
+  else if(S.tour) playTourRound(); else showView('Tour');
+});
+$('#menuBtn').addEventListener('click', goHome);
+$('#waBtn').addEventListener('click', () => { if(curRec) window.open('https://wa.me/?text=' + encodeURIComponent(shareText(curRec)), '_blank'); });
+$('#shBtn').addEventListener('click', e => { if(curRec) copyText(shareText(curRec), e.currentTarget); });
+$('#tAll').addEventListener('click', () => { tab = 'all'; renderLb(); });
+$('#tGrp').addEventListener('click', () => { tab = 'grp'; renderLb(); });
+$('#postBtn').addEventListener('click', async () => {
+  const nm = $('#nm').value.trim();
+  if(!nm){ $('#nm').focus(); return; }
+  S.name = nm.slice(0,16); S.grp = $('#gp').value.trim().toLowerCase().slice(0,22);
+  const rec = S.plays[DAY];
+  if(rec && !rec.posted){
+    if(SB){ try{ await sbPost(rec); rec.posted = true; }catch(e){} } else { rec.posted = true; }
+  }
+  saveS(); $('#rForm').style.display = 'none'; renderLb();
+});
+$('#acts').addEventListener('pointerdown', e => {
+  const a = e.target.closest('.act'), r = e.target.closest('.runBtn'), s = e.target.closest('.stopBtn');
+  if(a){ e.preventDefault(); onAct(+a.dataset.i); }
+  else if(r){ e.preventDefault(); startRun(performance.now()); }
+  else if(s){ e.preventDefault(); run.stopReq = true; s.textContent = 'Staying put…'; }
+});
+document.addEventListener('keydown', e => {
+  if(!ov.classList.contains('hidden') || !cfg) return;
+  if(/^[1-3]$/.test(e.key) && phase==='choose') onAct(+e.key - 1);
+  else if((e.key===' ' || e.key==='Enter') && phase==='run'){ e.preventDefault(); startRun(performance.now()); }
+});
+let quitTimer = 0;
+$('#quitBtn').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if(!quitTimer){ b.textContent = 'Quit?'; b.style.width = 'auto'; b.style.padding = '0 10px'; b.style.borderRadius = '15px'; quitTimer = setTimeout(resetQuit, 2500); return; }
+  resetQuit(); liveStop(); cfg = null; phase = 'idle'; card = []; $('#sb').style.display = 'none'; $('#hint').style.display = 'none'; $('#declBtn').style.display = 'none';
+  renderActs(); goHome();
+});
+function resetQuit(){ clearTimeout(quitTimer); quitTimer = 0; const b = $('#quitBtn'); b.textContent = '✕'; b.style.width = ''; b.style.padding = ''; b.style.borderRadius = ''; }
+$('#declBtn').addEventListener('click', declare);
+
+$('#faceBtn').addEventListener('click', () => $('#faceIn').click());
+$('#faceIn').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { const im = new Image(); im.onload = () => { try{ setUserFace(photoToFace(im), true); }catch(err){} }; im.src = rd.result; };
+  rd.readAsDataURL(f); e.target.value = '';
+});
+$('#faceDel').addEventListener('click', e => { e.preventDefault(); clearFace(); });
+$('#myName').value = S.name || '';
+$('#myName').addEventListener('input', e => { S.name = e.target.value.trim().slice(0,8); saveS(); applyRoles(); });
+
+window.__gcd.api = {startMatch, onAct, startRun, startDaily, startQuick, S, get st(){ return {phase, mode, inn, sum, wkts, bi, run, cfg, curType, target}; }};
+setGroundBar(); updWallet(); cd(); setInterval(cd, 1000);
+$('#hint').style.display = 'none'; $('#sb').style.display = 'none';
+showView('Menu');
+if(!HAS3D){ $('#msg3d').style.display = 'flex'; }
+else {
+  try{
+    buildWorld(); resize(); requestAnimationFrame(resize); setTimeout(resize, 200); loadFace();
+    requestAnimationFrame(loop);
+  }catch(e){
+    $('#msg3d').style.display = 'flex'; $('#msg3d').textContent = 'Your phone could not start 3D graphics.';
+  }
+}
+
+/* ================= ONLINE: UID + FRIEND CHALLENGES ================= */
+// A "friend challenge" is the same match (same seed = same deliveries) played by two people. Highest score wins.
+function genUid(){ return String(100000000 + Math.floor(Math.random()*900000000)); }
+if(!S.uid){ S.uid = genUid(); S.reg = false; }
+if(!Array.isArray(S.friends)) S.friends = [];
+if(!S.claimed) S.claimed = {};
+if(!S.fr) S.fr = {overs:2, diff:'medium'};
+saveS();
+const fmtUid = u => u.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+async function sbReq(method, path, body){
+  const h = sbHeaders(method==='GET' ? {} : {'Content-Type':'application/json', Prefer:'return=minimal'});
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, {method, headers:h, body:body ? JSON.stringify(body) : undefined});
+  if(!r.ok){ const e = new Error('http ' + r.status); e.status = r.status; throw e; }
+  return method==='GET' ? r.json() : null;
+}
+async function ensureReg(){
+  if(!SB || !S.name) return false;
+  if(S.reg) return true;
+  for(let i = 0; i < 6; i++){
+    try{ await sbReq('POST', 'gci_players', {uid:S.uid, name:S.name.slice(0,16)}); S.reg = true; saveS(); return true; }
+    catch(e){ if(e.status===409){ S.uid = genUid(); saveS(); continue; } throw e; }
+  }
+  return false;
+}
+let frMsg = '';
+function setFrMsg(m){ frMsg = m; const e = $('#frMsg'); if(e) e.textContent = m; }
+async function renderFriends(){
+  const b = $('#frBody'); b.innerHTML = '';
+  const add = (html, cls) => { const d = document.createElement('div'); if(cls) d.className = cls; d.innerHTML = html; b.appendChild(d); return d; };
+  add('YOUR PLAYER ID', 'lab');
+  const u = add('<div class="score" style="font-size:34px;letter-spacing:2px">' + fmtUid(S.uid) + '</div><div class="note" style="margin-top:2px">Share this ID with friends so they can add you.</div>', 'rule');
+  u.style.color = 'var(--gold)';
+  const row = document.createElement('div'); row.style.display = 'flex'; row.style.gap = '6px'; u.appendChild(row);
+  const cp = document.createElement('button'); cp.className = 'btn ghost small'; cp.textContent = 'Copy ID'; cp.style.margin = '6px 0 0';
+  cp.addEventListener('click', () => copyText(S.uid, cp));
+  const wa = document.createElement('button'); wa.className = 'btn wa small'; wa.textContent = 'Invite on WhatsApp'; wa.style.margin = '6px 0 0';
+  wa.addEventListener('click', () => window.open('https://wa.me/?text=' + encodeURIComponent('🏏 Play Gully Cricket India with me! Add my Player ID: ' + S.uid + '\n' + location.href.split(/[?#]/)[0]), '_blank'));
+  row.append(cp, wa);
+  if(!SB){ add('Online play needs the game server. The game owner must add the Supabase keys in the game file.', 'note'); return; }
+  if(!S.name){ add('First type your name on the main menu (under "Add your face"). It becomes your online name.', 'rule'); return; }
+  try{ await ensureReg(); }catch(e){ add('Could not reach the server. Check your internet.', 'note'); return; }
+  add('ADD A FRIEND BY ID', 'lab');
+  const f = document.createElement('div'); f.style.display = 'flex'; f.style.gap = '6px'; b.appendChild(f);
+  const inp = document.createElement('input'); inp.id = 'frUid'; inp.inputMode = 'numeric'; inp.maxLength = 11; inp.placeholder = '9-digit Player ID';
+  inp.style.cssText = 'flex:1;padding:11px;border-radius:10px;border:1px solid #2b4570;background:#0b1424;color:var(--ink);font-size:15px;min-width:0;-webkit-user-select:text;user-select:text';
+  const ab = document.createElement('button'); ab.className = 'btn blue'; ab.style.cssText = 'width:auto;margin:0;padding:0 16px'; ab.textContent = 'Add';
+  ab.addEventListener('click', addFriend); f.append(inp, ab);
+  const m = add('', 'note'); m.id = 'frMsg'; m.textContent = frMsg;
+  add('CHALLENGE SETTINGS', 'lab');
+  const o = add('', 'chiprow'), d = add('', 'chiprow');
+  [1,2,5].forEach(n => { const x = document.createElement('button'); x.className = 'cb' + (S.fr.overs===n ? ' on' : ''); x.textContent = n + (n>1 ? ' overs' : ' over'); x.addEventListener('click', () => { S.fr.overs = n; saveS(); renderFriends(); }); o.appendChild(x); });
+  Object.keys(DIFFS).forEach(k => { const x = document.createElement('button'); x.className = 'cb' + (S.fr.diff===k ? ' on' : ''); x.textContent = DIFFS[k].name; x.addEventListener('click', () => { S.fr.diff = k; saveS(); renderFriends(); }); d.appendChild(x); });
+  liveSection(b, add);
+  add('MY FRIENDS', 'lab');
+  if(!S.friends.length) add('No friends yet. Add one using their Player ID.', 'note');
+  S.friends.forEach(fr => {
+    const r = document.createElement('div'); r.className = 'sq';
+    r.innerHTML = '<div class="nf"><b>' + esc(fr.name) + '</b><span>ID ' + fmtUid(fr.uid) + '</span></div>';
+    const ch = document.createElement('button'); ch.className = 'cb on'; ch.textContent = '⚔ Challenge'; ch.addEventListener('click', () => challengeFriend(fr));
+    const rm = document.createElement('button'); rm.className = 'cb'; rm.textContent = '✕'; rm.addEventListener('click', () => { S.friends = S.friends.filter(x => x.uid !== fr.uid); saveS(); renderFriends(); });
+    const lv = document.createElement('button'); lv.className = 'cb'; lv.textContent = '🔴 Live'; lv.addEventListener('click', () => createRoom(fr)); r.append(lv, ch, rm); b.appendChild(r);
+  });
+  const inv = add(''); liveInvites(inv);
+  const inbox = add('<div class="lab">CHALLENGES FOR YOU</div><div class="note">Loading…</div>');
+  const hist = add('<div class="lab">RECENT RESULTS</div><div class="note">Loading…</div>');
+  try{
+    const open = await sbReq('GET', 'gci_challenges?to_uid=eq.' + S.uid + '&to_score=is.null&order=created_at.desc&limit=10&select=*');
+    inbox.innerHTML = '<div class="lab">CHALLENGES FOR YOU</div>';
+    if(!open.length) inbox.insertAdjacentHTML('beforeend', '<div class="note">No pending challenges.</div>');
+    open.forEach(c => {
+      const r = document.createElement('div'); r.className = 'sq';
+      r.innerHTML = '<div class="nf"><b>' + esc(c.from_name || 'Friend') + ' challenged you</b><span>' + c.overs + ' over' + (c.overs>1?'s':'') + ' · ' + DIFFS[c.diff].name + ' · beat ' + c.from_score + ' pts</span></div>';
+      const p = document.createElement('button'); p.className = 'cb on'; p.textContent = 'Play'; p.addEventListener('click', () => playChallenge(c)); r.appendChild(p); inbox.appendChild(r);
+    });
+    const done = await sbReq('GET', 'gci_challenges?or=(from_uid.eq.' + S.uid + ',to_uid.eq.' + S.uid + ')&to_score=not.is.null&order=created_at.desc&limit=8&select=*');
+    hist.innerHTML = '<div class="lab">RECENT RESULTS</div>';
+    if(!done.length) hist.insertAdjacentHTML('beforeend', '<div class="note">Finished challenges show up here.</div>');
+    let got = 0;
+    done.forEach(c => {
+      const mine = c.from_uid===S.uid, my = mine ? c.from_score : c.to_score, th = mine ? c.to_score : c.from_score, nm = mine ? c.to_name : c.from_name;
+      const res = my > th ? 'WON' : my < th ? 'LOST' : 'TIED', rew = my > th ? 60 : my === th ? 30 : 20;
+      const r = document.createElement('div'); r.className = 'sq' + (res==='WON' ? ' in' : '');
+      let note = '';
+      if(!S.claimed[c.id]){ S.claimed[c.id] = 1; got += rew; note = ' · +' + rew + ' 🪙'; }
+      r.innerHTML = '<div class="nf"><b>You ' + my + ' vs ' + esc(nm || 'Friend') + ' ' + th + '</b><span>' + c.overs + ' over' + (c.overs>1?'s':'') + ' · ' + DIFFS[c.diff].name + note + '</span></div><div class="st">' + res + '</div>';
+      hist.appendChild(r);
+    });
+    if(got){ addCoins(got); }
+  }catch(e){ inbox.innerHTML = '<div class="note">Could not load challenges.</div>'; hist.innerHTML = ''; }
+}
+async function addFriend(){
+  const v = ($('#frUid').value || '').replace(/\D/g, '');
+  if(v.length !== 9) return setFrMsg('A Player ID has 9 digits.');
+  if(v === S.uid) return setFrMsg('That is your own ID.');
+  if(S.friends.some(f => f.uid === v)) return setFrMsg('Already in your friends list.');
+  if(S.friends.length >= 30) return setFrMsg('Friend list is full.');
+  setFrMsg('Searching…');
+  try{
+    const rows = await sbReq('GET', 'gci_players?uid=eq.' + v + '&select=uid,name');
+    if(!rows.length) return setFrMsg('No player found with that ID.');
+    S.friends.push({uid:rows[0].uid, name:rows[0].name}); saveS(); frMsg = ''; renderFriends();
+  }catch(e){ setFrMsg('Could not reach the server.'); }
+}
+function newSeed(){ return 1 + Math.floor(Math.random()*2e9); }
+function challengeFriend(fr){
+  startMatch({kind:'friend', fmt:'intl', overs:S.fr.overs, diff:S.fr.diff, gi:Math.floor(Math.random()*GROUNDS.length), seed:newSeed(), opp:'AI', friend:{toUid:fr.uid, toName:fr.name}});
+}
+function playChallenge(c){
+  startMatch({kind:'friend', fmt:'intl', overs:c.overs, diff:c.diff, gi:c.gi, seed:c.seed, opp:'AI', friend:{chId:c.id, toUid:c.from_uid, toName:c.from_name, target:c.from_score}});
+}
+async function friendFinish(rec){
+  const rw = $('#rReward'); rw.style.display = ''; rw.textContent = 'Sending your score…';
+  const f = cfg.friend || {};
+  try{
+    if(f.chId){
+      await sbReq('PATCH', 'gci_challenges?id=eq.' + f.chId + '&to_score=is.null', {to_score:rec.score, status:'done'});
+      const my = rec.score, th = f.target, rew = my > th ? 60 : my === th ? 30 : 20;
+      const c = S.claimed['c' + f.chId]; if(!c){ S.claimed['c' + f.chId] = 1; S.claimed[f.chId] = 1; addCoins(rew); }
+      rw.innerHTML = (my > th ? '🏆 You beat ' : my === th ? '🤝 Tied with ' : 'You lost to ') + esc(f.toName || 'your friend') + '!<br>You ' + my + ' vs ' + th + ' · +' + rew + ' 🪙';
+    } else {
+      await sbReq('POST', 'gci_challenges', {from_uid:S.uid, to_uid:f.toUid, from_name:S.name, to_name:f.toName, seed:cfg.seed, fmt:'intl', overs:cfg.overs, diff:cfg.diff, gi:cfg.gi, from_score:rec.score});
+      rw.innerHTML = 'Challenge sent to <b>' + esc(f.toName) + '</b>! You scored ' + rec.score + ' pts. When they play, the result appears under Friends.';
+    }
+  }catch(e){ rw.textContent = 'Could not reach the server, so your score was not sent. Try again later.'; }
+}
+
+})();
+</script>
+</body>
+</html>
